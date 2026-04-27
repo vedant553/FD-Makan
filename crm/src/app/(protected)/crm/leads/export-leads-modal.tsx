@@ -92,8 +92,6 @@ export function ExportLeadsModal({ open, onClose }: { open: boolean; onClose: ()
     setColumnsExpanded(true);
   }, [open]);
 
-  const allIds = useMemo(() => new Set(EXPORT_COLUMN_DEFS.map((c) => c.id)), []);
-
   if (!open) return null;
 
   return (
