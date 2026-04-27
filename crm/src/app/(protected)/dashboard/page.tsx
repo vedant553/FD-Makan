@@ -3,8 +3,8 @@
 import React, { useState, useRef, useEffect } from "react";
 import { 
   Users, User, RefreshCcw, Hand, UserMinus, 
-  ClipboardList, Home, Phone, PhoneOutgoing, 
-  PhoneCall, Voicemail, Building, Handshake,
+  ClipboardList, Home, Phone,
+  PhoneCall, Handshake,
   MoreVertical, ChevronDown
 } from "lucide-react";
 
@@ -35,10 +35,10 @@ export default function DashboardPage() {
         </div>
       </section>
 
-      {/* Today's Leads Section */}
+      {/* Today&apos;s Leads Section */}
       <section className="bg-white rounded-md shadow-sm p-4">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-4 md:gap-0">
-          <h2 className="text-lg font-semibold text-gray-700">Today's Leads</h2>
+          <h2 className="text-lg font-semibold text-gray-700">Today&apos;s Leads</h2>
           <div className="flex flex-wrap gap-2">
             <select className="border border-gray-300 rounded text-sm px-3 py-1.5 text-gray-500 bg-white min-w-[150px] outline-none">
               <option>Select Team</option>
@@ -57,10 +57,10 @@ export default function DashboardPage() {
         </div>
       </section>
 
-      {/* Today's Activities Report */}
+      {/* Today&apos;s Activities Report */}
       <section className="bg-white rounded-md shadow-sm p-4">
         <div className="mb-4">
-          <h2 className="text-lg font-semibold text-gray-700 mb-3">Today's Activities Report</h2>
+          <h2 className="text-lg font-semibold text-gray-700 mb-3">Today&apos;s Activities Report</h2>
           <div className="flex flex-wrap gap-2 mb-4">
             <select className="border border-gray-300 rounded text-sm px-3 py-1.5 text-gray-500 bg-white min-w-[150px] outline-none">
               <option>Select Team</option>

@@ -9,13 +9,11 @@ import {
   ListTodo,
   Users,
   LogOut,
-  Phone,
   Building2,
   CalendarRange,
   BarChart3,
   UserCog,
   Megaphone,
-  Menu,
 } from "lucide-react";
 import { signOut } from "next-auth/react";
 

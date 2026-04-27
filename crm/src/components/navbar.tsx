@@ -114,7 +114,7 @@ export function Navbar({ isCollapsed, setIsCollapsed, user }: NavbarProps) {
         <div className="fixed inset-0 z-50 flex justify-end bg-black/20 transition-opacity" onClick={() => setIsUpdatesOpen(false)}>
           <div className="w-full max-w-[400px] h-full bg-slate-50 shadow-xl flex flex-col transform transition-transform" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between p-4 border-b bg-white shrink-0">
-              <h2 className="font-semibold text-lg text-slate-700">What's New In Buildesk CRM</h2>
+              <h2 className="font-semibold text-lg text-slate-700">What&apos;s New In Buildesk CRM</h2>
               <button suppressHydrationWarning onClick={() => setIsUpdatesOpen(false)} className="text-gray-400 hover:text-gray-600">
                  <X className="h-5 w-5" />
               </button>
@@ -125,7 +125,7 @@ export function Navbar({ isCollapsed, setIsCollapsed, user }: NavbarProps) {
                 <h3 className="font-bold text-blue-600 mb-1 text-[15px]">New Feature Update In Buildesk: Pre-sales Tagging</h3>
                 <p className="text-xs text-gray-500 mb-3">Mar 11, 2026</p>
                 <p className="text-[14px] text-gray-700 mb-4 leading-relaxed">
-                  We're excited to introduce <strong>Pre-Sales Tagging</strong> in <strong>Buildesk</strong>. This feature allows you to tag or assign a <strong>Pre-Sales Agent</strong> to contacts, leads, and their...
+                  We&apos;re excited to introduce <strong>Pre-Sales Tagging</strong> in <strong>Buildesk</strong>. This feature allows you to tag or assign a <strong>Pre-Sales Agent</strong> to contacts, leads, and their...
                 </p>
                 <div className="flex justify-end">
                   <button suppressHydrationWarning className="px-3 py-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors text-sm rounded font-medium">Read More</button>
@@ -138,7 +138,7 @@ export function Navbar({ isCollapsed, setIsCollapsed, user }: NavbarProps) {
                 <p className="text-xs text-gray-500 mb-3">Sep 6, 2025</p>
                 <p className="text-[14px] font-medium text-gray-800 mb-2">🚀 Feature 1 - Seamless Lead Navigation</p>
                 <p className="text-[14px] text-gray-700 mb-4 leading-relaxed">
-                  "Now, you can <strong>navigate from one lead to another without closing the profile page.</strong> No more going back and forth—simply...
+                  &quot;Now, you can <strong>navigate from one lead to another without closing the profile page.</strong> No more going back and forth-simply...
                 </p>
                 <div className="flex justify-end">
                   <button suppressHydrationWarning className="px-3 py-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors text-sm rounded font-medium">Read More</button>
@@ -150,7 +150,7 @@ export function Navbar({ isCollapsed, setIsCollapsed, user }: NavbarProps) {
                 <h3 className="font-bold text-blue-600 mb-1 text-[15px]">🚀 Buildesk Feature Update: Smarter Task Due Time Logic ⏰</h3>
                 <p className="text-xs text-gray-500 mb-3">Nov 19, 2024</p>
                 <p className="text-[14px] text-gray-700 mb-4 leading-relaxed">
-                  We've updated how pending or overdue tasks are determined in Buildesk. Previously, a task was marked as overdue only after the end of the scheduled day...
+                  We&apos;ve updated how pending or overdue tasks are determined in Buildesk. Previously, a task was marked as overdue only after the end of the scheduled day...
                 </p>
                 <div className="flex justify-end">
                   <button suppressHydrationWarning className="px-3 py-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors text-sm rounded font-medium">Read More</button>
