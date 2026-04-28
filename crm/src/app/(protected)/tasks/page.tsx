@@ -1,15 +1,63 @@
 "use client";
 
-import React, { useState } from "react";
-import { User, Search, X, MoreVertical, ChevronDown, Download, CalendarDays, Menu, LayoutGrid, Plus } from "lucide-react";
+import React, { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { User, Search, X, MoreVertical, ChevronDown, Download, CalendarDays, Menu, LayoutGrid, Plus, MessageCircle, PencilLine, Mail, Phone, ClipboardList, Check, Pencil, Trash2, RefreshCw } from "lucide-react";
+
+type TaskEditPayload = {
+  lead: string;
+  salesAgent: string;
+  title: string;
+  dueDate: string;
+  activityType: string;
+};
 
 export default function TasksPage() {
-  const [activeTab, setActiveTab] = useState("Calendar");
+  const searchParams = useSearchParams();
+  const initialTab = searchParams.get("tab");
+  const [activeTab, setActiveTab] = useState(
+    initialTab === "site-visit" ? "Site Visit" : "Tasks",
+  );
   const [calendarView, setCalendarView] = useState("Week");
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   const [isSiteVisitModalOpen, setIsSiteVisitModalOpen] = useState(false);
+  const [isCalendarAddModalOpen, setIsCalendarAddModalOpen] = useState(false);
   const [showTaskAnalysis, setShowTaskAnalysis] = useState(false);
   const [taskAnalysisView, setTaskAnalysisView] = useState<"chart" | "table">("chart");
+  const [showSiteVisitAnalysis, setShowSiteVisitAnalysis] = useState(false);
+  const [siteVisitAnalysisView, setSiteVisitAnalysisView] = useState<"chart" | "table">("chart");
+  const [taskLeadDrawerOpen, setTaskLeadDrawerOpen] = useState(false);
+  const [selectedLeadName, setSelectedLeadName] = useState("Saumittra Mathur");
+  const [taskEditData, setTaskEditData] = useState<TaskEditPayload | null>(null);
+  const [taskTableDownloadOpen, setTaskTableDownloadOpen] = useState(false);
+  const [taskExportShowDetails, setTaskExportShowDetails] = useState<"yes" | "no">("yes");
+  const [taskExportFileType, setTaskExportFileType] = useState<"xlsx" | "csv" | "pdf">("xlsx");
+  const [taskExportColumnsOpen, setTaskExportColumnsOpen] = useState(true);
+  const [taskExportFileName, setTaskExportFileName] = useState("User-Task");
+  const TASK_EXPORT_COLUMNS = [
+    "Created Date",
+    "Lead",
+    "Mobile",
+    "Type",
+    "Assigned By",
+    "Assigned To",
+    "Pre Sales Agent",
+    "Schedule Date",
+    "Title",
+    "Remark",
+    "Activity Type",
+    "Stage",
+    "Status",
+    "Completed On",
+    "Completed By",
+  ] as const;
+  const [taskSelectedColumns, setTaskSelectedColumns] = useState<Set<string>>(new Set(TASK_EXPORT_COLUMNS));
+
+  useEffect(() => {
+    const tab = searchParams.get("tab");
+    if (tab === "tasks") setActiveTab("Tasks");
+    else if (tab === "site-visit") setActiveTab("Site Visit");
+  }, [searchParams]);
 
   return (
     <div className="min-h-screen font-sans text-gray-800 p-4 md:p-6 bg-[#f4f7f6]">
@@ -94,8 +142,13 @@ export default function TasksPage() {
                     <MoreVertical className="w-4 h-4" />
                   </button>
                   <div className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded shadow-lg py-1 hidden group-hover:block z-50 min-w-[160px]">
-                    <button suppressHydrationWarning className="w-full text-left px-4 py-2 text-[13px] text-gray-700 hover:bg-gray-50 flex items-center gap-2">
-                      <Download className="w-4 h-4 text-gray-600" /> Table Download
+                    <button
+                      suppressHydrationWarning
+                      className="w-full text-left px-4 py-2 text-[13px] text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                      onClick={() => setTaskTableDownloadOpen(true)}
+                    >
+                      <Download className="w-4 h-4 text-gray-600" />
+                      Table Download
                     </button>
                     <button suppressHydrationWarning className="w-full text-left px-4 py-2 text-[13px] text-gray-700 hover:bg-gray-50 flex items-center gap-2">
                       <Download className="w-4 h-4 text-gray-600" /> Bulk Download
@@ -167,22 +220,29 @@ export default function TasksPage() {
                       <th className="py-3 px-4 border-r border-gray-100">ASSIGNED TO</th>
                       <th className="py-3 px-4 border-r border-gray-100">PRE SALES AGENT</th>
                       <th className="py-3 px-4 border-r border-gray-100">SCHEDULE DATE</th>
-                      <th className="py-3 px-4 w-full">TITLE</th>
+                      <th className="py-3 px-4 border-r border-gray-100">TITLE</th>
+                      <th className="py-3 px-4 border-r border-gray-100">REMARK</th>
+                      <th className="py-3 px-4 border-r border-gray-100">ACTIVITY TYPE</th>
+                      <th className="py-3 px-4 border-r border-gray-100">STAGE</th>
+                      <th className="py-3 px-4 border-r border-gray-100">STATUS</th>
+                      <th className="py-3 px-4 border-r border-gray-100">COMPLETED ON</th>
+                      <th className="py-3 px-4 border-r border-gray-100">COMPLETED BY</th>
+                      <th className="py-3 px-4">ACTION</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
-                    <TaskTableRow no="1" date="Apr 1, 2026, 11:11:11 AM" lead="Saumittra Mathur" mobile="+91-9970094776" assignedBy="Ajay Jaiswal" assignedTo="Ajay Jaiswal" schDate="Apr 1, 2026, 11:41:01 AM" title="Call At Apr 1, 2026, 11:41 Am" />
-                    <TaskTableRow no="2" date="Mar 31, 2026, 8:45:57 PM" lead="Ghanshyam Maniya" mobile="+91-7016561147" assignedBy="Sakshi Pagare" assignedTo="Sakshi Pagare" schDate="Apr 1, 2026, 11:45:00 AM" title="Call With Ghanshyam Maniya @ Apr..." />
-                    <TaskTableRow no="3" date="Apr 1, 2026, 11:50:49 AM" lead="Bikram Pradhan Na" mobile="+91-7021681952" assignedBy="Aniket Surwade" assignedTo="Aniket Surwade" schDate="Apr 1, 2026, 11:50:00 AM" title="Followp Task With Bikram Pradhan Na" />
-                    <TaskTableRow no="4" date="Apr 1, 2026, 11:57:09 AM" lead="Prakash Pandey" mobile="+91-9967446180" assignedBy="Sakshi Pagare" assignedTo="Sakshi Pagare" schDate="Apr 1, 2026, 12:27:10 PM" title="Call At Apr 1, 2026, 12:27 Pm" />
-                    <TaskTableRow no="5" date="Jul 23, 2025, 12:37:50 PM" lead="Dhiraj Tripathi" mobile="+91-8268996594" assignedBy="Kajal Jadhav" assignedTo="Supriya Jadhav" schDate="Apr 1, 2026, 12:37:00 PM" title="Followp Task With Dhiraj Tripathi" />
-                    <TaskTableRow no="6" date="Apr 1, 2026, 11:10:19 AM" lead="Sunanda Kadam" mobile="+91-8108333619" assignedBy="Avishi Pandey" assignedTo="Avishi Pandey" schDate="Apr 1, 2026, 12:40:11 PM" title="Call At Apr 1, 2026, 12:40 Pm" />
-                    <TaskTableRow no="7" date="Apr 1, 2026, 11:13:27 AM" lead="Manisha Katkar" mobile="+91-9820176618" assignedBy="Avishi Pandey" assignedTo="Avishi Pandey" schDate="Apr 1, 2026, 12:43:21 PM" title="Call At Apr 1, 2026, 12:43 Pm" />
-                    <TaskTableRow no="8" date="Apr 1, 2026, 11:16:54 AM" lead="Rajeev" mobile="+91-7727011444" assignedBy="Avishi Pandey" assignedTo="Avishi Pandey" schDate="Apr 1, 2026, 12:46:36 PM" title="Call At Apr 1, 2026, 12:46 Pm" />
-                    <TaskTableRow no="9" date="Apr 1, 2026, 12:06:29 PM" lead="Narendra Na" mobile="+91-7738028305" assignedBy="Avishi Pandey" assignedTo="Avishi Pandey" schDate="Apr 1, 2026, 1:00:56 PM" title="Call At Apr 1, 2026, 1:00 Pm" />
-                    <TaskTableRow no="10" date="Apr 1, 2026, 12:11:50 PM" lead="Arun Rajoriya" mobile="+91-9424787840" assignedBy="Avishi Pandey" assignedTo="Avishi Pandey" schDate="Apr 1, 2026, 1:01:20 PM" title="Call At Apr 1, 2026, 1:01 Pm" />
-                    <TaskTableRow no="11" date="Apr 1, 2026, 11:11:48 AM" lead="Santoshdevjichougule Na" mobile="+91-7975178292" assignedBy="Sakshi Pagare" assignedTo="Sakshi Pagare" schDate="Apr 1, 2026, 1:11:00 PM" title="Followp Task With Santoshdevjichou..." />
-                    <TaskTableRow no="12" date="Apr 1, 2026, 11:53:28 AM" lead="Pathan Afjalkhan Alamkhan" mobile="+1-5392792428" assignedBy="Sakshi Pagare" assignedTo="Sakshi Pagare" schDate="Apr 1, 2026, 1:23:22 PM" title="Call At Apr 1, 2026, 1:23 Pm" />
+                    <TaskTableRow no="1" date="Apr 1, 2026, 11:11:11 AM" lead="Saumittra Mathur" mobile="+91-9970094776" assignedBy="Ajay Jaiswal" assignedTo="Ajay Jaiswal" schDate="Apr 1, 2026, 11:41:01 AM" title="Call At Apr 1, 2026, 11:41 Am" onLeadClick={(lead) => { setSelectedLeadName(lead); setTaskLeadDrawerOpen(true); }} onUpdateClick={(payload) => setTaskEditData(payload)} />
+                    <TaskTableRow no="2" date="Mar 31, 2026, 8:45:57 PM" lead="Ghanshyam Maniya" mobile="+91-7016561147" assignedBy="Sakshi Pagare" assignedTo="Sakshi Pagare" schDate="Apr 1, 2026, 11:45:00 AM" title="Call With Ghanshyam Maniya @ Apr..." onLeadClick={(lead) => { setSelectedLeadName(lead); setTaskLeadDrawerOpen(true); }} onUpdateClick={(payload) => setTaskEditData(payload)} />
+                    <TaskTableRow no="3" date="Apr 1, 2026, 11:50:49 AM" lead="Bikram Pradhan Na" mobile="+91-7021681952" assignedBy="Aniket Surwade" assignedTo="Aniket Surwade" schDate="Apr 1, 2026, 11:50:00 AM" title="Followp Task With Bikram Pradhan Na" onLeadClick={(lead) => { setSelectedLeadName(lead); setTaskLeadDrawerOpen(true); }} onUpdateClick={(payload) => setTaskEditData(payload)} />
+                    <TaskTableRow no="4" date="Apr 1, 2026, 11:57:09 AM" lead="Prakash Pandey" mobile="+91-9967446180" assignedBy="Sakshi Pagare" assignedTo="Sakshi Pagare" schDate="Apr 1, 2026, 12:27:10 PM" title="Call At Apr 1, 2026, 12:27 Pm" onLeadClick={(lead) => { setSelectedLeadName(lead); setTaskLeadDrawerOpen(true); }} onUpdateClick={(payload) => setTaskEditData(payload)} />
+                    <TaskTableRow no="5" date="Jul 23, 2025, 12:37:50 PM" lead="Dhiraj Tripathi" mobile="+91-8268996594" assignedBy="Kajal Jadhav" assignedTo="Supriya Jadhav" schDate="Apr 1, 2026, 12:37:00 PM" title="Followp Task With Dhiraj Tripathi" onLeadClick={(lead) => { setSelectedLeadName(lead); setTaskLeadDrawerOpen(true); }} onUpdateClick={(payload) => setTaskEditData(payload)} />
+                    <TaskTableRow no="6" date="Apr 1, 2026, 11:10:19 AM" lead="Sunanda Kadam" mobile="+91-8108333619" assignedBy="Avishi Pandey" assignedTo="Avishi Pandey" schDate="Apr 1, 2026, 12:40:11 PM" title="Call At Apr 1, 2026, 12:40 Pm" onLeadClick={(lead) => { setSelectedLeadName(lead); setTaskLeadDrawerOpen(true); }} onUpdateClick={(payload) => setTaskEditData(payload)} />
+                    <TaskTableRow no="7" date="Apr 1, 2026, 11:13:27 AM" lead="Manisha Katkar" mobile="+91-9820176618" assignedBy="Avishi Pandey" assignedTo="Avishi Pandey" schDate="Apr 1, 2026, 12:43:21 PM" title="Call At Apr 1, 2026, 12:43 Pm" onLeadClick={(lead) => { setSelectedLeadName(lead); setTaskLeadDrawerOpen(true); }} onUpdateClick={(payload) => setTaskEditData(payload)} />
+                    <TaskTableRow no="8" date="Apr 1, 2026, 11:16:54 AM" lead="Rajeev" mobile="+91-7727011444" assignedBy="Avishi Pandey" assignedTo="Avishi Pandey" schDate="Apr 1, 2026, 12:46:36 PM" title="Call At Apr 1, 2026, 12:46 Pm" onLeadClick={(lead) => { setSelectedLeadName(lead); setTaskLeadDrawerOpen(true); }} onUpdateClick={(payload) => setTaskEditData(payload)} />
+                    <TaskTableRow no="9" date="Apr 1, 2026, 12:06:29 PM" lead="Narendra Na" mobile="+91-7738028305" assignedBy="Avishi Pandey" assignedTo="Avishi Pandey" schDate="Apr 1, 2026, 1:00:56 PM" title="Call At Apr 1, 2026, 1:00 Pm" onLeadClick={(lead) => { setSelectedLeadName(lead); setTaskLeadDrawerOpen(true); }} onUpdateClick={(payload) => setTaskEditData(payload)} />
+                    <TaskTableRow no="10" date="Apr 1, 2026, 12:11:50 PM" lead="Arun Rajoriya" mobile="+91-9424787840" assignedBy="Avishi Pandey" assignedTo="Avishi Pandey" schDate="Apr 1, 2026, 1:01:20 PM" title="Call At Apr 1, 2026, 1:01 Pm" onLeadClick={(lead) => { setSelectedLeadName(lead); setTaskLeadDrawerOpen(true); }} onUpdateClick={(payload) => setTaskEditData(payload)} />
+                    <TaskTableRow no="11" date="Apr 1, 2026, 11:11:48 AM" lead="Santoshdevjichougule Na" mobile="+91-7975178292" assignedBy="Sakshi Pagare" assignedTo="Sakshi Pagare" schDate="Apr 1, 2026, 1:11:00 PM" title="Followp Task With Santoshdevjichou..." onLeadClick={(lead) => { setSelectedLeadName(lead); setTaskLeadDrawerOpen(true); }} onUpdateClick={(payload) => setTaskEditData(payload)} />
+                    <TaskTableRow no="12" date="Apr 1, 2026, 11:53:28 AM" lead="Pathan Afjalkhan Alamkhan" mobile="+1-5392792428" assignedBy="Sakshi Pagare" assignedTo="Sakshi Pagare" schDate="Apr 1, 2026, 1:23:22 PM" title="Call At Apr 1, 2026, 1:23 Pm" onLeadClick={(lead) => { setSelectedLeadName(lead); setTaskLeadDrawerOpen(true); }} onUpdateClick={(payload) => setTaskEditData(payload)} />
                   </tbody>
                 </table>
               </div>
@@ -237,7 +297,21 @@ export default function TasksPage() {
                 >
                   Add
                 </button>
-                <button suppressHydrationWarning className="bg-[#1a56db] hover:bg-blue-700 text-white px-4 py-1.5 rounded text-sm font-medium transition-colors">Analysis</button>
+                <button
+                  suppressHydrationWarning
+                  className="bg-[#1a56db] hover:bg-blue-700 text-white px-4 py-1.5 rounded text-sm font-medium transition-colors"
+                  onClick={() => {
+                    setShowSiteVisitAnalysis((isVisible) => {
+                      const nextVisible = !isVisible;
+                      if (nextVisible) {
+                        setSiteVisitAnalysisView("chart");
+                      }
+                      return nextVisible;
+                    });
+                  }}
+                >
+                  Analysis
+                </button>
                 <div className="relative group">
                   <button suppressHydrationWarning className="border border-[#1a56db] text-[#1a56db] p-1.5 rounded flex items-center justify-center hover:bg-blue-50 transition-colors">
                     <MoreVertical className="w-4 h-4" />
@@ -253,6 +327,15 @@ export default function TasksPage() {
                 </div>
               </div>
             </div>
+
+            {showSiteVisitAnalysis && (
+              <SiteVisitAnalysisReport
+                view={siteVisitAnalysisView}
+                onToggleView={() =>
+                  setSiteVisitAnalysisView((currentView) => (currentView === "chart" ? "table" : "chart"))
+                }
+              />
+            )}
 
             {/* Table Area */}
             <div className="bg-white rounded-md border border-gray-100 shadow-sm overflow-hidden">
@@ -347,6 +430,7 @@ export default function TasksPage() {
                       status="Completed"
                       completedOn="Apr 22, 2026, 10:55 AM"
                       completedBy="Kajal Jadhav"
+                      onLeadClick={(lead) => { setSelectedLeadName(lead); setTaskLeadDrawerOpen(true); }}
                     />
                   </tbody>
                 </table>
@@ -360,7 +444,13 @@ export default function TasksPage() {
             {/* Header */}
             <div className="p-4 border-b border-gray-200 flex justify-between items-center">
               <h2 className="text-lg font-semibold text-gray-700">Calendar</h2>
-              <button suppressHydrationWarning className="bg-[#1a56db] hover:bg-blue-700 text-white px-5 py-1.5 rounded text-sm font-medium transition-colors shadow-sm">Add</button>
+              <button
+                suppressHydrationWarning
+                onClick={() => setIsCalendarAddModalOpen(true)}
+                className="bg-[#1a56db] hover:bg-blue-700 text-white px-5 py-1.5 rounded text-sm font-medium transition-colors shadow-sm"
+              >
+                Add
+              </button>
             </div>
             
             {/* Sub-header */}
@@ -653,9 +743,172 @@ export default function TasksPage() {
         )}
       </div>
       {isTaskModalOpen && <CreateTaskModal open={isTaskModalOpen} onClose={() => setIsTaskModalOpen(false)} />}
+      {isCalendarAddModalOpen && <CalendarAddModal open={isCalendarAddModalOpen} onClose={() => setIsCalendarAddModalOpen(false)} />}
+      {taskEditData && (
+        <EditTaskModal
+          open={Boolean(taskEditData)}
+          data={taskEditData}
+          onClose={() => setTaskEditData(null)}
+        />
+      )}
       {isSiteVisitModalOpen && (
         <CreateSiteVisitModal open={isSiteVisitModalOpen} onClose={() => setIsSiteVisitModalOpen(false)} />
       )}
+      {taskTableDownloadOpen ? (
+        <div className="fixed inset-0 z-[130] flex items-center justify-center bg-black/60 p-3 sm:p-4">
+          <div className="flex max-h-[90vh] w-full max-w-[620px] flex-col overflow-hidden rounded-md border border-gray-200 bg-white shadow-2xl">
+            <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
+              <h3 className="text-2xl font-semibold text-[#3a3f5a]">Export User-Task Data</h3>
+              <button
+                suppressHydrationWarning
+                type="button"
+                onClick={() => setTaskTableDownloadOpen(false)}
+                className="flex h-10 w-10 items-center justify-center rounded border-2 border-gray-600 bg-white text-gray-700 hover:bg-gray-50"
+                aria-label="Close export modal"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="space-y-5 overflow-y-auto px-6 py-5">
+              <div>
+                <label className="mb-2 block text-[17px] font-semibold text-[#3a3f5a]">File Name</label>
+                <input
+                  suppressHydrationWarning
+                  value={taskExportFileName}
+                  onChange={(e) => setTaskExportFileName(e.target.value)}
+                  className="w-full rounded border border-gray-300 px-4 py-2.5 text-[22px] text-[#3a3f5a] outline-none focus:border-[#1a56db]"
+                />
+              </div>
+
+              <div className="flex flex-wrap items-center gap-x-8 gap-y-2">
+                <span className="text-[17px] font-semibold text-[#3a3f5a]">Show Details</span>
+                <label className="inline-flex items-center gap-2 text-[20px] text-[#3a3f5a]">
+                  <input
+                    suppressHydrationWarning
+                    type="radio"
+                    name="task-show-details"
+                    checked={taskExportShowDetails === "yes"}
+                    onChange={() => setTaskExportShowDetails("yes")}
+                    className="h-4 w-4 accent-[#b84fff]"
+                  />
+                  Yes
+                </label>
+                <label className="inline-flex items-center gap-2 text-[20px] text-[#3a3f5a]">
+                  <input
+                    suppressHydrationWarning
+                    type="radio"
+                    name="task-show-details"
+                    checked={taskExportShowDetails === "no"}
+                    onChange={() => setTaskExportShowDetails("no")}
+                    className="h-4 w-4 accent-[#b84fff]"
+                  />
+                  No
+                </label>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-x-8 gap-y-2">
+                <span className="text-[17px] font-semibold text-[#3a3f5a]">Select File Type</span>
+                {(["xlsx", "csv", "pdf"] as const).map((t) => (
+                  <label key={t} className="inline-flex items-center gap-2 text-[20px] text-[#3a3f5a]">
+                    <input
+                      suppressHydrationWarning
+                      type="radio"
+                      name="task-file-type"
+                      checked={taskExportFileType === t}
+                      onChange={() => setTaskExportFileType(t)}
+                      className="h-4 w-4 accent-[#b84fff]"
+                    />
+                    {t.toUpperCase()}
+                  </label>
+                ))}
+              </div>
+
+              <div>
+                <div className="mb-2 flex items-center gap-4">
+                  <span className="text-[17px] font-semibold text-[#3a3f5a]">Select Columns</span>
+                  <button
+                    suppressHydrationWarning
+                    type="button"
+                    className="text-[16px] text-[#1a56db] hover:underline"
+                    onClick={() => setTaskSelectedColumns(new Set(TASK_EXPORT_COLUMNS))}
+                  >
+                    Select All
+                  </button>
+                  <button
+                    suppressHydrationWarning
+                    type="button"
+                    className="text-[16px] text-[#1a56db] hover:underline"
+                    onClick={() => setTaskSelectedColumns(new Set())}
+                  >
+                    Clear All
+                  </button>
+                </div>
+
+                <div className="overflow-hidden rounded border border-gray-300">
+                  <button
+                    suppressHydrationWarning
+                    type="button"
+                    onClick={() => setTaskExportColumnsOpen((v) => !v)}
+                    className="flex w-full items-center justify-between border-b border-gray-200 bg-white px-3 py-2 text-left"
+                  >
+                    <span className="rounded bg-blue-50 px-2 py-1 text-[16px] text-[#1f2f4d]">{taskSelectedColumns.size} columns are selected</span>
+                    <ChevronDown className={`h-5 w-5 text-gray-400 transition-transform ${taskExportColumnsOpen ? "rotate-180" : ""}`} />
+                  </button>
+                  {taskExportColumnsOpen ? (
+                    <div className="max-h-[300px] overflow-y-auto">
+                      {TASK_EXPORT_COLUMNS.map((col) => {
+                        const checked = taskSelectedColumns.has(col);
+                        return (
+                          <label
+                            key={col}
+                            className={`flex cursor-pointer items-center gap-3 border-b border-gray-100 px-4 py-2.5 text-[24px] text-[#2e344f] last:border-b-0 ${checked ? "bg-[#f4f9ff]" : "bg-white"}`}
+                          >
+                            <input
+                              suppressHydrationWarning
+                              type="checkbox"
+                              checked={checked}
+                              onChange={() => {
+                                setTaskSelectedColumns((prev) => {
+                                  const next = new Set(prev);
+                                  if (next.has(col)) next.delete(col);
+                                  else next.add(col);
+                                  return next;
+                                });
+                              }}
+                              className="h-5 w-5 rounded border-gray-300 accent-[#1565d8]"
+                            />
+                            {col}
+                          </label>
+                        );
+                      })}
+                    </div>
+                  ) : null}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-3 border-t border-gray-200 px-6 py-4">
+              <button
+                suppressHydrationWarning
+                type="button"
+                onClick={() => setTaskTableDownloadOpen(false)}
+                className="rounded border-2 border-[#1a56db] bg-white px-5 py-2 text-[28px] font-medium text-[#1a56db] hover:bg-blue-50"
+              >
+                Cancel
+              </button>
+              <button
+                suppressHydrationWarning
+                type="button"
+                className="rounded bg-[#1a56db] px-5 py-2 text-[28px] font-medium text-white hover:bg-blue-700"
+              >
+                Export Your Data
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+      <TaskLeadInfoDrawer open={taskLeadDrawerOpen} onClose={() => setTaskLeadDrawerOpen(false)} leadName={selectedLeadName} />
     </div>
   );
 }
@@ -677,6 +930,10 @@ const TASK_ANALYSIS_DATA: TaskAnalysisDatum[] = [
   { salesAgent: "Aniket Surwade", overdue: 29, upcoming: 0, completed: 7 },
   { salesAgent: "Arbaaz Patel", overdue: 7, upcoming: 1, completed: 13 },
   { salesAgent: "Priya Jagtap", overdue: 3, upcoming: 1, completed: 5 },
+];
+
+const SITE_VISIT_ANALYSIS_DATA: TaskAnalysisDatum[] = [
+  { salesAgent: "Kajal Jadhav", overdue: 0, upcoming: 0, completed: 1 },
 ];
 
 function TaskAnalysisReport({
@@ -841,6 +1098,135 @@ function TaskAnalysisReport({
   );
 }
 
+function SiteVisitAnalysisReport({
+  view,
+  onToggleView,
+}: {
+  view: "chart" | "table";
+  onToggleView: () => void;
+}) {
+  const maxTotal = Math.max(...SITE_VISIT_ANALYSIS_DATA.map((item) => item.overdue + item.upcoming + item.completed), 1);
+  const yAxisMax = Math.max(1, Math.ceil(maxTotal));
+  const yTicks = [1, 0];
+
+  return (
+    <div className="rounded-md border border-gray-100 bg-white shadow-sm">
+      <div className="flex justify-end gap-3 px-5 pt-4">
+        {view === "table" && (
+          <button suppressHydrationWarning className="inline-flex items-center gap-2 rounded bg-[#19c6a6] px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-[#14b293]">
+            <Download className="h-3.5 w-3.5" />
+            Export
+          </button>
+        )}
+        <button suppressHydrationWarning
+          type="button"
+          onClick={onToggleView}
+          className="rounded border border-gray-300 p-1.5 text-gray-600 transition-colors hover:bg-gray-100"
+          title={view === "chart" ? "Show table report" : "Show chart report"}
+          aria-label={view === "chart" ? "Show table report" : "Show chart report"}
+        >
+          {view === "chart" ? <Menu className="h-4 w-4" /> : <LayoutGrid className="h-4 w-4" />}
+        </button>
+      </div>
+
+      {view === "chart" ? (
+        <div className="px-4 pb-5 pt-2">
+          <h3 className="mb-6 text-center text-lg font-medium text-gray-700">Site Visit Analysis</h3>
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-[52px_1fr_130px]">
+            <div className="relative hidden h-[300px] lg:block">
+              <span className="absolute left-1 top-1/2 -translate-y-1/2 -rotate-90 whitespace-nowrap text-xs text-gray-600">
+                Completed/Pending/Upcoming
+              </span>
+              {yTicks.map((tick) => (
+                <span
+                  key={tick}
+                  className="absolute right-0 -translate-y-1/2 text-[11px] text-gray-500"
+                  style={{ top: `${100 - (tick / yAxisMax) * 100}%` }}
+                >
+                  {tick}
+                </span>
+              ))}
+            </div>
+
+            <div className="overflow-x-auto">
+              <div className="min-w-[560px]">
+                <div className="relative h-[300px] border-b border-gray-300">
+                  <div className="absolute inset-0 flex items-end justify-center px-6">
+                    {SITE_VISIT_ANALYSIS_DATA.map((item) => {
+                      const total = item.overdue + item.upcoming + item.completed;
+                      const totalHeight = (total / yAxisMax) * 100;
+                      return (
+                        <div key={item.salesAgent} className="flex w-full max-w-[620px] flex-col items-center justify-end">
+                          <div
+                            className="flex w-full items-start justify-center rounded-sm border border-gray-200 bg-[#3e5b7a] pt-1 text-[11px] text-white shadow-sm"
+                            style={{ height: `${Math.max(totalHeight, 2)}%` }}
+                          >
+                            {item.completed}
+                          </div>
+                          <p className="mt-2 w-full truncate text-center text-[11px] text-gray-600" title={item.salesAgent}>
+                            {item.salesAgent}
+                          </p>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="min-w-[130px] space-y-1 pt-2 text-xs text-gray-700">
+              <div className="flex items-center gap-2">
+                <span className="h-3 w-3 bg-[#d9d9d9]" />
+                Upcoming
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="h-3 w-3 bg-[#e4544f]" />
+                Over Due
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="h-3 w-3 bg-[#3e5b7a]" />
+                Completed
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="px-4 pb-5 pt-2">
+          <div className="overflow-x-auto rounded border border-gray-200">
+            <table className="w-full min-w-[880px] text-left text-[13px] text-gray-700">
+              <thead className="bg-gray-50 text-[12px] font-semibold uppercase text-gray-600">
+                <tr>
+                  <th className="border-b border-gray-200 px-3 py-2">#</th>
+                  <th className="border-b border-gray-200 px-3 py-2">Sales Agent</th>
+                  <th className="border-b border-gray-200 px-3 py-2">Overdue Site Visit</th>
+                  <th className="border-b border-gray-200 px-3 py-2">Upcoming Site Visit</th>
+                  <th className="border-b border-gray-200 px-3 py-2">Completed Site Visit</th>
+                  <th className="border-b border-gray-200 px-3 py-2">Total Site Visit</th>
+                </tr>
+              </thead>
+              <tbody>
+                {SITE_VISIT_ANALYSIS_DATA.map((item, index) => {
+                  const total = item.overdue + item.upcoming + item.completed;
+                  return (
+                    <tr key={item.salesAgent} className="hover:bg-gray-50">
+                      <td className="border-b border-gray-100 px-3 py-2">{index + 1}</td>
+                      <td className="border-b border-gray-100 px-3 py-2">{item.salesAgent}</td>
+                      <td className="border-b border-gray-100 px-3 py-2">{item.overdue}</td>
+                      <td className="border-b border-gray-100 px-3 py-2">{item.upcoming}</td>
+                      <td className="border-b border-gray-100 px-3 py-2">{item.completed}</td>
+                      <td className="border-b border-gray-100 px-3 py-2">{total}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function CreateTaskModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [activityType, setActivityType] = useState("Call");
   const [salesAgent, setSalesAgent] = useState("Aman Dubey");
@@ -971,6 +1357,104 @@ function CreateTaskModal({ open, onClose }: { open: boolean; onClose: () => void
           >
             Cancel
           </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CalendarAddModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const [activityType, setActivityType] = useState("Call");
+  const [salesAgent, setSalesAgent] = useState("Aman Dubey");
+  const [lead, setLead] = useState("");
+  const [title, setTitle] = useState("Call at Apr 28, 2026, 4:15 PM");
+  const [remark, setRemark] = useState("");
+  const [remindMe, setRemindMe] = useState(true);
+  const [completed, setCompleted] = useState(false);
+  const [dueDate, setDueDate] = useState("Apr 28, 2026, 4:15 PM");
+  const [reminder, setReminder] = useState("15 Minute");
+
+  if (!open) return null;
+
+  return (
+    <div className="fixed inset-0 z-[170] flex items-center justify-center bg-black/60 p-2">
+      <div className="w-full max-w-[900px] rounded border border-gray-200 bg-white shadow-2xl">
+        <div className="flex items-center justify-between border-b border-gray-200 px-5 py-4">
+          <h4 className="text-4xl font-semibold text-[#3a3f52]">Add</h4>
+          <button suppressHydrationWarning type="button" onClick={onClose} className="rounded border border-gray-600 p-1 text-gray-700 hover:bg-gray-100" aria-label="Close add calendar task modal">
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        <div className="space-y-5 px-5 py-5">
+          <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+            <div className="flex flex-col">
+              <label className="mb-2 text-[15px] font-semibold text-[#3a3f52]">Select Activity Type</label>
+              <div className="relative">
+                <input suppressHydrationWarning value={activityType} onChange={(event) => setActivityType(event.target.value)} className="w-full rounded border border-gray-300 px-4 py-3 pr-8 text-[15px] text-[#3a3f52] outline-none" />
+                <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
+              </div>
+            </div>
+            <div className="flex flex-col">
+              <label className="mb-2 text-[15px] font-semibold text-[#3a3f52]">Select Sales Agent</label>
+              <div className="relative">
+                <input suppressHydrationWarning value={salesAgent} onChange={(event) => setSalesAgent(event.target.value)} className="w-full rounded border border-gray-300 px-4 py-3 pr-14 text-[15px] text-[#3a3f52] outline-none" />
+                <X className="pointer-events-none absolute right-8 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
+              </div>
+            </div>
+          </div>
+
+          <div className="flex flex-col">
+            <label className="mb-2 text-[15px] font-semibold text-[#3a3f52]">Select Lead</label>
+            <div className="relative">
+              <input suppressHydrationWarning value={lead} onChange={(event) => setLead(event.target.value)} placeholder="Search & Select Lead" className="w-full rounded border border-gray-300 px-4 py-3 pr-8 text-[15px] text-[#3a3f52] outline-none" />
+              <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
+            </div>
+          </div>
+
+          <ModalTextInput label="Title" value={title} onChange={(event) => setTitle(event.target.value)} />
+
+          <div className="flex flex-col">
+            <label className="mb-2 text-[15px] font-semibold text-[#3a3f52]">Remark</label>
+            <textarea
+              value={remark}
+              onChange={(event) => setRemark(event.target.value)}
+              placeholder="Enter Remark"
+              rows={3}
+              className="w-full rounded border border-gray-300 px-4 py-3 text-[15px] text-[#3a3f52] outline-none"
+            />
+          </div>
+
+          <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+            <ModalToggle label="Remind me?" checked={remindMe} onChange={setRemindMe} />
+            <ModalToggle label="Completed?" checked={completed} onChange={setCompleted} />
+          </div>
+
+          <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+            <div className="flex flex-col">
+              <label className="mb-2 text-[15px] font-semibold text-[#3a3f52]">Select Due Date</label>
+              <div className="flex overflow-hidden rounded border border-gray-300">
+                <input suppressHydrationWarning value={dueDate} onChange={(event) => setDueDate(event.target.value)} className="w-full px-4 py-3 text-[15px] text-[#3a3f52] outline-none" />
+                <button suppressHydrationWarning type="button" className="border-l border-gray-300 bg-gray-100 px-4 text-gray-600 hover:bg-gray-200" aria-label="Select due date">
+                  <CalendarDays className="h-5 w-5" />
+                </button>
+              </div>
+            </div>
+            <div className="flex flex-col">
+              <label className="mb-2 text-[15px] font-semibold text-[#3a3f52]">Reminder</label>
+              <div className="relative">
+                <input suppressHydrationWarning value={reminder} onChange={(event) => setReminder(event.target.value)} className="w-full rounded border border-gray-300 px-4 py-3 pr-14 text-[15px] text-[#3a3f52] outline-none" />
+                <X className="pointer-events-none absolute right-8 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex justify-end gap-3 border-t border-gray-200 px-5 py-4">
+          <button suppressHydrationWarning type="button" className="bg-[#1a56db] px-6 py-2 text-[15px] font-medium text-white hover:bg-blue-700">Submit</button>
+          <button suppressHydrationWarning type="button" onClick={onClose} className="bg-[#d9dde4] px-6 py-2 text-[15px] font-medium text-[#3a3f52] hover:bg-[#cdd2db]">Cancel</button>
         </div>
       </div>
     </div>
@@ -1276,6 +1760,118 @@ function ModalToggle({
   );
 }
 
+function EditTaskModal({ open, data, onClose }: { open: boolean; data: TaskEditPayload; onClose: () => void }) {
+  const [activityType, setActivityType] = useState(data.activityType || "Call");
+  const [salesAgent, setSalesAgent] = useState(data.salesAgent || "");
+  const [lead, setLead] = useState(data.lead ? `${data.lead} (${data.salesAgent})` : "");
+  const [title, setTitle] = useState(data.title || "");
+  const [remark, setRemark] = useState("");
+  const [remindMe, setRemindMe] = useState(true);
+  const [completed, setCompleted] = useState(false);
+  const [dueDate, setDueDate] = useState(data.dueDate || "");
+  const [reminder, setReminder] = useState("15 Minute");
+
+  useEffect(() => {
+    if (!open) return;
+    setActivityType(data.activityType || "Call");
+    setSalesAgent(data.salesAgent || "");
+    setLead(data.lead ? `${data.lead} (${data.salesAgent})` : "");
+    setTitle(data.title || "");
+    setDueDate(data.dueDate || "");
+    setRemark("");
+    setRemindMe(true);
+    setCompleted(false);
+    setReminder("15 Minute");
+  }, [open, data]);
+
+  if (!open) return null;
+
+  return (
+    <div className="fixed inset-0 z-[160] flex items-center justify-center bg-black/60 p-2">
+      <div className="w-full max-w-[900px] rounded border border-gray-200 bg-white shadow-2xl">
+        <div className="flex items-center justify-between border-b border-gray-200 px-5 py-4">
+          <h4 className="text-[38px] font-semibold text-[#3a3f52]">Edit Task For {data.lead}</h4>
+          <button suppressHydrationWarning type="button" onClick={onClose} className="rounded border border-gray-600 p-1 text-gray-700 hover:bg-gray-100" aria-label="Close edit task modal">
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        <div className="space-y-5 px-5 py-5">
+          <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+            <div className="flex flex-col">
+              <label className="mb-2 text-[15px] font-semibold text-[#3a3f52]">Select Activity Type</label>
+              <div className="relative">
+                <input suppressHydrationWarning value={activityType} onChange={(event) => setActivityType(event.target.value)} className="w-full rounded border border-gray-300 px-4 py-3 pr-8 text-[15px] text-[#3a3f52] outline-none" />
+                <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
+              </div>
+            </div>
+            <div className="flex flex-col">
+              <label className="mb-2 text-[15px] font-semibold text-[#3a3f52]">Select Sales Agent</label>
+              <div className="relative">
+                <input suppressHydrationWarning value={salesAgent} onChange={(event) => setSalesAgent(event.target.value)} className="w-full rounded border border-gray-300 px-4 py-3 pr-14 text-[15px] text-[#3a3f52] outline-none" />
+                <X className="pointer-events-none absolute right-8 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
+              </div>
+            </div>
+          </div>
+
+          <div className="flex flex-col">
+            <label className="mb-2 text-[15px] font-semibold text-[#3a3f52]">Select Lead</label>
+            <div className="relative">
+              <input suppressHydrationWarning value={lead} onChange={(event) => setLead(event.target.value)} className="w-full rounded border border-gray-300 px-4 py-3 pr-14 text-[15px] text-[#3a3f52] outline-none" />
+              <X className="pointer-events-none absolute right-8 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+              <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
+            </div>
+          </div>
+
+          <ModalTextInput label="Title" value={title} onChange={(event) => setTitle(event.target.value)} />
+
+          <div className="flex flex-col">
+            <label className="mb-2 text-[15px] font-semibold text-[#3a3f52]">Remark</label>
+            <textarea
+              value={remark}
+              onChange={(event) => setRemark(event.target.value)}
+              placeholder="Enter Remark"
+              rows={3}
+              className="w-full rounded border border-gray-300 px-4 py-3 text-[15px] text-[#3a3f52] outline-none"
+            />
+          </div>
+
+          <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+            <ModalToggle label="Remind me?" checked={remindMe} onChange={setRemindMe} />
+            <ModalToggle label="Completed?" checked={completed} onChange={setCompleted} />
+          </div>
+
+          <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+            <div className="flex flex-col">
+              <label className="mb-2 text-[15px] font-semibold text-[#3a3f52]">Select Due Date</label>
+              <div className="flex overflow-hidden rounded border border-gray-300">
+                <input suppressHydrationWarning value={dueDate} onChange={(event) => setDueDate(event.target.value)} className="w-full px-4 py-3 text-[15px] text-[#3a3f52] outline-none" />
+                <button suppressHydrationWarning type="button" className="border-l border-gray-300 bg-gray-100 px-4 text-gray-600 hover:bg-gray-200" aria-label="Select due date">
+                  <CalendarDays className="h-5 w-5" />
+                </button>
+              </div>
+            </div>
+            <div className="flex flex-col">
+              <label className="mb-2 text-[15px] font-semibold text-[#3a3f52]">Reminder</label>
+              <div className="relative">
+                <input suppressHydrationWarning value={reminder} onChange={(event) => setReminder(event.target.value)} className="w-full rounded border border-gray-300 px-4 py-3 pr-14 text-[15px] text-[#3a3f52] outline-none" />
+                <X className="pointer-events-none absolute right-8 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex justify-end gap-3 border-t border-gray-200 px-5 py-4">
+          <button suppressHydrationWarning type="button" className="bg-[#1a56db] px-6 py-2 text-[15px] font-medium text-white hover:bg-blue-700">Submit</button>
+          <button suppressHydrationWarning type="button" onClick={onClose} className="bg-[#d9dde4] px-6 py-2 text-[15px] font-medium text-[#3a3f52] hover:bg-[#cdd2db]">Cancel</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function MetricCard({ title, value }: { title: string, value: string }) {
   return (
     <div className="flex flex-col relative py-2 pl-4 pr-2">
@@ -1309,13 +1905,56 @@ function FilterSelect({ label, placeholder }: { label: string, placeholder: stri
   );
 }
 
-function TaskTableRow({ no, date, lead, mobile, assignedBy, assignedTo, schDate, title }: { no: string, date: string, lead: string, mobile: string, assignedBy: string, assignedTo: string, schDate: string, title: string }) {
+function TaskTableRow({
+  no,
+  date,
+  lead,
+  mobile,
+  assignedBy,
+  assignedTo,
+  schDate,
+  title,
+  onLeadClick,
+  remark = "Task Autocompleted.",
+  activityType = "CALL",
+  stage = "OPEN",
+  status = "Completed",
+  completedOn = "Apr 01, 2026, 2:50 PM",
+  completedBy = "Sakshi Pagare",
+  onUpdateClick,
+}: {
+  no: string,
+  date: string,
+  lead: string,
+  mobile: string,
+  assignedBy: string,
+  assignedTo: string,
+  schDate: string,
+  title: string,
+  onLeadClick?: (lead: string) => void,
+  remark?: string,
+  activityType?: string,
+  stage?: string,
+  status?: "Completed" | "Overdue",
+  completedOn?: string,
+  completedBy?: string,
+  onUpdateClick?: (payload: TaskEditPayload) => void
+}) {
   return (
     <tr className="hover:bg-gray-50 text-[13px] text-gray-600">
       <td className="py-2.5 px-4 border-r border-gray-100"><input suppressHydrationWarning type="checkbox" className="rounded border-gray-300" /></td>
       <td className="py-2.5 px-3 border-r border-gray-100 text-center">{no}</td>
       <td className="py-2.5 px-4 border-r border-gray-100">{date}</td>
-      <td className="py-2.5 px-4 border-r border-gray-100"><a href="#" className="text-[#1a56db] hover:underline font-medium">{lead}</a></td>
+      <td className="py-2.5 px-4 border-r border-gray-100">
+        <button
+          suppressHydrationWarning
+          type="button"
+          className="text-[#1a56db] hover:underline font-medium"
+          onClick={() => onLeadClick?.(lead)}
+        >
+          {lead}
+        </button>
+      </td>
       <td className="py-2.5 px-4 border-r border-gray-100">{mobile}</td>
       <td className="py-2.5 px-4 border-r border-gray-100">
         <span className="bg-[#1a56db] text-white text-[10px] px-2 py-1 rounded font-medium uppercase tracking-wider">Lead</span>
@@ -1324,18 +1963,1362 @@ function TaskTableRow({ no, date, lead, mobile, assignedBy, assignedTo, schDate,
       <td className="py-2.5 px-4 border-r border-gray-100 font-semibold text-gray-800">{assignedTo}</td>
       <td className="py-2.5 px-4 border-r border-gray-100"></td>
       <td className="py-2.5 px-4 border-r border-gray-100">{schDate}</td>
-      <td className="py-2.5 px-4 truncate max-w-[250px]" title={title}>{title}</td>
+      <td className="py-2.5 px-4 border-r border-gray-100 truncate max-w-[250px]" title={title}>{title}</td>
+      <td className="py-2.5 px-4 border-r border-gray-100 max-w-[210px] truncate" title={remark}>{remark}</td>
+      <td className="py-2.5 px-4 border-r border-gray-100">{activityType}</td>
+      <td className="py-2.5 px-4 border-r border-gray-100 uppercase">{stage}</td>
+      <td className="py-2.5 px-4 border-r border-gray-100">
+        <span className={`inline-flex items-center gap-1 rounded px-2 py-0.5 text-[11px] font-semibold text-white ${status === "Completed" ? "bg-emerald-500" : "bg-rose-500"}`}>
+          <Check className="h-3 w-3" />
+          {status}
+        </span>
+      </td>
+      <td className="py-2.5 px-4 border-r border-gray-100">{completedOn}</td>
+      <td className="py-2.5 px-4 border-r border-gray-100">{completedBy}</td>
+      <td className="py-2.5 px-4">
+        <div className="relative group">
+          <button suppressHydrationWarning type="button" className="rounded bg-[#1a56db] p-1 text-white hover:bg-blue-700" aria-label="Task action menu">
+            <ChevronDown className="h-3.5 w-3.5" />
+          </button>
+          <div className="absolute right-0 top-full z-20 mt-1 hidden min-w-[140px] rounded border border-gray-200 bg-white py-1 shadow-md group-hover:block">
+            <button suppressHydrationWarning type="button" className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-[12px] text-gray-700 hover:bg-gray-50">
+              <Check className="h-3.5 w-3.5" /> Mark As Done
+            </button>
+            <button
+              suppressHydrationWarning
+              type="button"
+              onClick={() =>
+                onUpdateClick?.({
+                  lead,
+                  salesAgent: assignedTo,
+                  title,
+                  dueDate: schDate,
+                  activityType: "Call",
+                })
+              }
+              className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-[12px] text-gray-700 hover:bg-gray-50"
+            >
+              <Pencil className="h-3.5 w-3.5" /> Update
+            </button>
+            <button suppressHydrationWarning type="button" className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-[12px] text-gray-700 hover:bg-gray-50">
+              <Trash2 className="h-3.5 w-3.5" /> Delete
+            </button>
+          </div>
+        </div>
+      </td>
     </tr>
   );
 }
 
-function SiteVisitTableRow({ no, date, lead, mobile, frequency, project, schDate, title, remark, assignedBy, assignedTo, preSalesAgent, channelPartner, isCpPresent, sourcingAgent, visitType, stage, source, feedbackStatus, feedback, status, completedOn, completedBy }: { no: string, date: string, lead: string, mobile: string, frequency: string, project: string, schDate: string, title: string, remark: string, assignedBy: string, assignedTo: string, preSalesAgent: string, channelPartner: string, isCpPresent: string, sourcingAgent: string, visitType: string, stage: string, source: string, feedbackStatus: string, feedback: string, status: string, completedOn: string, completedBy: string }) {
+function TaskLeadInfoDrawer({ open, onClose, leadName }: { open: boolean; onClose: () => void; leadName: string }) {
+  const quickActions = ["WA", "Note", "Email", "Call", "SMS", "Task"];
+  const quickActionMeta = {
+    WA: { icon: MessageCircle, shell: "bg-emerald-100", iconColor: "text-emerald-600" },
+    Note: { icon: PencilLine, shell: "bg-blue-100", iconColor: "text-blue-600" },
+    Email: { icon: Mail, shell: "bg-rose-100", iconColor: "text-rose-500" },
+    Call: { icon: Phone, shell: "bg-lime-100", iconColor: "text-lime-600" },
+    SMS: { icon: Mail, shell: "bg-red-100", iconColor: "text-red-500" },
+    Task: { icon: ClipboardList, shell: "bg-indigo-100", iconColor: "text-indigo-500" },
+  } as const;
+  const [activeQuickModal, setActiveQuickModal] = useState<null | "wa" | "note" | "email" | "call" | "sms" | "task">(null);
+  const [documentsModalOpen, setDocumentsModalOpen] = useState(false);
+  const centerTabs = ["Suggestion", "Timeline", "Followup", "Site Visit", "Meeting", "E-Mail", "Call", "SMS", "WhatsApp", "Projects", "Documents"] as const;
+  const [activeCenterTab, setActiveCenterTab] = useState<(typeof centerTabs)[number]>("Suggestion");
+  const detailSections = [
+    { title: "Campaign Details", rows: [["Name", "Sai World City"], ["Channel", "SOBO PIN DROP OPEN"], ["AdName", "NEW VIDEO AD COPY"], ["Utm", "-"], ["Utm Medium", "-"], ["Utm Source", "-"]] },
+    { title: "Other Details", rows: [["Ethnicity", "-"], ["Loan", "No"]] },
+    { title: "Last Activity", rows: [["Title", "Call at Apr 23, 2026, 11:57 AM"], ["Remark", "out of station"], ["Created Date", "Apr 21, 2026, 5:27 PM"]] },
+    { title: "First Activity", rows: [["Title", "Call at Apr 1, 2026, 11:41 AM"], ["Remark", "cd"], ["Created Date", "Apr 01, 2026, 11:11 AM"]] },
+    { title: "Last Note", rows: [["Note", "-"], ["Created Date", "-"]] },
+  ] as const;
+  const timelineHighlights = [
+    { label: "Tasks", value: "7" },
+    { label: "Site Visit Scheduled", value: "0" },
+    { label: "Site Visit Completed", value: "0" },
+  ] as const;
+  const timelineHighlightsRight = [
+    { label: "Meetings", value: "0" },
+    { label: "Offline Calls", value: "8" },
+    { label: "IVR Calls", value: "0" },
+  ] as const;
+  const timelineFeed = [
+    {
+      type: "task" as const,
+      title: "Task",
+      status: "Pending",
+      statusTone: "pending" as const,
+      date: "Apr 21, 2026, 5:27 PM",
+      user: "Saumittra Mathur",
+      subject: "Call At Apr 23, 2026, 11:57 Am",
+      assignedTo: "Ajay Jaiswal",
+      dueDate: "Apr 23, 2026, 11:57 AM",
+      remark: "Out Of Station",
+      itemType: "CALL",
+      createdBy: "Ajay Jaiswal",
+    },
+    {
+      type: "event" as const,
+      title: "[Trigger] - 'Task reminder to sales agent'",
+      date: "Apr 23, 2026, 11:43:00 AM",
+      user: "Saumittra Mathur",
+    },
+    {
+      type: "call" as const,
+      title: "Outgoing",
+      date: "Apr 21, 2026, 5:27:00 PM",
+      user: "Saumittra Mathur",
+      body: "Outgoing Call at 21/04/2026 17:27:00 and duration is 0:00:23 by Ajay Jaiswal",
+    },
+    {
+      type: "note" as const,
+      title: "Note",
+      date: "Apr 17, 2026, 5:20:50 PM",
+      user: "Saumittra Mathur",
+      body: "ringing",
+      footer: "Ajay Jaiswal",
+      showDelete: true,
+    },
+    {
+      type: "task" as const,
+      title: "Task",
+      status: "Completed",
+      statusTone: "completed" as const,
+      date: "Apr 15, 2026, 12:41 PM",
+      user: "Saumittra Mathur",
+      subject: "Call At Apr 15, 2026, 4:10 Pm",
+      assignedTo: "Ajay Jaiswal",
+      dueDate: "Apr 15, 2026, 4:10 PM",
+      remark: "Cb . Task Autocompleted.",
+      itemType: "CALL",
+      createdBy: "Ajay Jaiswal",
+      completedOn: "Apr 21, 2026, 5:27 PM",
+    },
+    {
+      type: "stage" as const,
+      title: "Lead Stage Changed",
+      date: "Apr 1, 2026, 2:49:54 PM",
+      user: "Saumittra Mathur",
+      body: "Lead stage updated from Open to CALL BACK.",
+      footer: "Ajay Jaiswal",
+    },
+    {
+      type: "transfer" as const,
+      title: "Lead Transferred",
+      date: "Apr 1, 2026, 11:08:56 AM",
+      user: "Saumittra Mathur",
+      body: "This Lead has been transferred and assigned To Ajay Jaiswal On 01/04/2026 11:08 by Aman Dubey.",
+      footer: "Aman Dubey",
+    },
+    {
+      type: "event" as const,
+      title: "Lead Created Via Campaign Sai World City (SOBO Pin drop Open)",
+      date: "Apr 1, 2026, 7:35:40 AM",
+      user: "Saumittra Mathur",
+      body: "Lead generated with details Saumittra Mathur (XXXXXX4776, ). Has shown interest in project SAI WORLD CITY.",
+      footer: "Source: IG",
+    },
+  ] as const;
+  const followupFeed = [
+    {
+      title: "Task",
+      status: "Pending",
+      statusTone: "pending" as const,
+      date: "Apr 21, 2026, 5:27 PM",
+      user: "Saumittra Mathur",
+      subject: "Call At Apr 23, 2026, 11:57 Am",
+      assignedTo: "Ajay Jaiswal",
+      dueDate: "Apr 23, 2026, 11:57 AM",
+      remark: "Out Of Station",
+      itemType: "CALL",
+      createdBy: "Ajay Jaiswal",
+      showActions: true,
+    },
+    {
+      title: "Task",
+      status: "Completed",
+      statusTone: "completed" as const,
+      date: "Apr 15, 2026, 12:41 PM",
+      user: "Saumittra Mathur",
+      subject: "Call At Apr 15, 2026, 4:10 Pm",
+      assignedTo: "Ajay Jaiswal",
+      dueDate: "Apr 15, 2026, 4:10 PM",
+      remark: "Cb . Task Autocompleted.",
+      itemType: "CALL",
+      createdBy: "Ajay Jaiswal",
+      completedOn: "Apr 21, 2026, 5:27 PM",
+    },
+    {
+      title: "Task",
+      status: "Completed",
+      statusTone: "completed" as const,
+      date: "Apr 08, 2026, 3:42 PM",
+      user: "Saumittra Mathur",
+      subject: "Call At May 6, 2026, 6:12 Pm",
+      assignedTo: "Ajay Jaiswal",
+      dueDate: "May 06, 2026, 6:12 PM",
+      remark: "Ringing . Task Autocompleted.",
+      itemType: "CALL",
+      createdBy: "Ajay Jaiswal",
+      completedOn: "Apr 15, 2026, 12:41 PM",
+    },
+    {
+      title: "Task",
+      status: "Completed",
+      statusTone: "completed" as const,
+      date: "Apr 02, 2026, 2:24 PM",
+      user: "Saumittra Mathur",
+      subject: "Call At Apr 2, 2026, 4:53 Pm",
+      assignedTo: "Ajay Jaiswal",
+      dueDate: "Apr 02, 2026, 4:53 PM",
+      remark: "Ringing. Task Autocompleted.",
+      itemType: "CALL",
+      createdBy: "Ajay Jaiswal",
+      completedOn: "Apr 08, 2026, 3:42 PM",
+    },
+    {
+      title: "Task",
+      status: "Completed",
+      statusTone: "completed" as const,
+      date: "Apr 01, 2026, 4:02 PM",
+      user: "Saumittra Mathur",
+      subject: "Followup Task With Saumittra Mathur",
+      assignedTo: "Ajay Jaiswal",
+      dueDate: "Apr 02, 2026, 4:02 PM",
+      remark: "Already Visited Arihant Aspire Looking 2bhk Rtmi . Task Autocompleted.",
+      itemType: "CALL",
+      createdBy: "Ajay Jaiswal",
+      completedOn: "Apr 02, 2026, 2:24 PM",
+    },
+    {
+      title: "Task",
+      status: "Completed",
+      statusTone: "completed" as const,
+      date: "Apr 01, 2026, 2:50 PM",
+      user: "Saumittra Mathur",
+      subject: "Call At Apr 1, 2026, 4:15 Pm",
+      assignedTo: "Ajay Jaiswal",
+      dueDate: "Apr 01, 2026, 4:15 PM",
+      remark: "Cb. Task Autocompleted.",
+      itemType: "CALL",
+      createdBy: "Ajay Jaiswal",
+      completedOn: "Apr 01, 2026, 4:02 PM",
+    },
+    {
+      title: "Task",
+      status: "Completed",
+      statusTone: "completed" as const,
+      date: "Apr 01, 2026, 11:11 AM",
+      user: "Saumittra Mathur",
+      subject: "Call At Apr 1, 2026, 11:41 Am",
+      assignedTo: "Ajay Jaiswal",
+      dueDate: "Apr 01, 2026, 11:41 AM",
+      remark: "Cd. Task Autocompleted.",
+      itemType: "CALL",
+      createdBy: "Ajay Jaiswal",
+      completedOn: "Apr 01, 2026, 2:50 PM",
+    },
+  ] as const;
+  const callFeed = [
+    { title: "Outgoing", date: "Apr 21, 2026, 5:27:00 PM", user: "Saumittra Mathur", body: "Outgoing Call at 21/04/2026 17:27:00 and duration is 0:00:23 by Ajay Jaiswal" },
+    { title: "Outgoing", date: "Apr 17, 2026, 5:20:25 PM", user: "Saumittra Mathur", body: "Outgoing Call at 17/04/2026 17:20:25 and duration is 0:00:00 by Ajay Jaiswal" },
+    { title: "Outgoing", date: "Apr 15, 2026, 12:40:02 PM", user: "Saumittra Mathur", body: "Outgoing Call at 15/04/2026 12:40:02 and duration is 0:00:20 by Ajay Jaiswal" },
+    { title: "Outgoing", date: "Apr 8, 2026, 3:41:03 PM", user: "Saumittra Mathur", body: "Outgoing Call at 08/04/2026 15:41:03 and duration is 0:00:00 by Sakshi Pagare" },
+    { title: "Outgoing", date: "Apr 2, 2026, 2:23:29 PM", user: "Saumittra Mathur", body: "Outgoing Call at 02/04/2026 14:23:29 and duration is 0:00:00 by Sakshi Pagare" },
+    { title: "Outgoing", date: "Apr 1, 2026, 4:00:31 PM", user: "Saumittra Mathur", body: "Outgoing Call at 01/04/2026 16:00:31 and duration is 0:01:00 by Ajay Jaiswal" },
+    { title: "Outgoing", date: "Apr 1, 2026, 2:48:49 PM", user: "Saumittra Mathur", body: "Outgoing Call at 01/04/2026 14:48:49 and duration is 0:00:20 by Ajay Jaiswal" },
+    { title: "Outgoing", date: "Apr 1, 2026, 11:10:12 AM", user: "Saumittra Mathur", body: "Outgoing Call at 01/04/2026 11:10:12 and duration is 0:00:20 by Ajay Jaiswal" },
+  ] as const;
+
+  const renderCenterSection = () => {
+    if (activeCenterTab === "Suggestion") {
+      return (
+        <div className="space-y-3">
+          <div className="rounded border border-gray-200 bg-white p-3">
+            <div className="mb-3 flex items-center justify-between">
+              <h4 className="text-base font-semibold text-gray-800">Requirements</h4>
+              <button suppressHydrationWarning type="button" className="rounded bg-[#1a56db] px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700">Save</button>
+            </div>
+            <div className="space-y-3">
+              <div className="grid grid-cols-1 items-center gap-2 md:grid-cols-[130px_1fr_1fr]">
+                <label className="text-sm font-semibold text-gray-700">Budget Range:</label>
+                <div className="relative">
+                  <input suppressHydrationWarning placeholder="Select Budget Minimum" className="w-full rounded border border-gray-300 px-3 py-2 pr-8 text-sm outline-none" />
+                  <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                </div>
+                <div className="relative">
+                  <input suppressHydrationWarning placeholder="Select Budget Maximum" className="w-full rounded border border-gray-300 px-3 py-2 pr-8 text-sm outline-none" />
+                  <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 items-center gap-2 md:grid-cols-[130px_1fr_1fr]">
+                <label className="text-sm font-semibold text-gray-700">Area Range:</label>
+                <div className="relative">
+                  <input suppressHydrationWarning defaultValue="0" className="w-full rounded border border-gray-300 px-3 py-2 pr-14 text-sm outline-none" />
+                  <X className="pointer-events-none absolute right-7 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-400" />
+                  <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                </div>
+                <div className="relative">
+                  <input suppressHydrationWarning defaultValue="0" className="w-full rounded border border-gray-300 px-3 py-2 pr-14 text-sm outline-none" />
+                  <X className="pointer-events-none absolute right-7 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-400" />
+                  <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 items-center gap-2 md:grid-cols-[130px_1fr_1fr]">
+                <label className="text-sm font-semibold text-gray-700">Requirement Type:</label>
+                <div className="relative">
+                  <input suppressHydrationWarning placeholder="Select Requirement" className="w-full rounded border border-gray-300 px-3 py-2 pr-8 text-sm outline-none" />
+                  <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                </div>
+                <div className="relative">
+                  <input suppressHydrationWarning placeholder="Select Property Type" className="w-full rounded border border-gray-300 px-3 py-2 pr-8 text-sm outline-none" />
+                  <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 items-center gap-2 md:grid-cols-[130px_1fr]">
+                <label className="text-sm font-semibold text-gray-700">Search Location</label>
+                <input suppressHydrationWarning placeholder="Enter your address" className="w-full rounded border border-gray-300 px-3 py-2 text-sm outline-none" />
+              </div>
+
+              <div className="grid grid-cols-1 items-start gap-2 md:grid-cols-[130px_1fr]">
+                <label className="pt-2 text-sm font-semibold text-gray-700">Street Address</label>
+                <textarea suppressHydrationWarning placeholder="Address" rows={2} className="w-full rounded border border-gray-300 px-3 py-2 text-sm outline-none" />
+              </div>
+
+              <div className="grid grid-cols-1 items-center gap-2 md:grid-cols-[130px_1fr_1fr]">
+                <label className="text-sm font-semibold text-gray-700">Location:</label>
+                <input suppressHydrationWarning placeholder="Location" className="w-full rounded border border-gray-300 px-3 py-2 text-sm outline-none" />
+                <input suppressHydrationWarning placeholder="SubLocation" className="w-full rounded border border-gray-300 px-3 py-2 text-sm outline-none" />
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded border border-gray-200 bg-white p-3">
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-[1fr_1fr]">
+              <div className="relative rounded border border-gray-300 bg-white px-2 py-1.5 pr-14">
+                <div className="flex flex-wrap gap-1">
+                  <span className="inline-flex items-center gap-1 rounded bg-blue-50 px-2 py-0.5 text-xs text-gray-700">Location <X className="h-3 w-3 text-gray-500" /></span>
+                  <span className="inline-flex items-center gap-1 rounded bg-blue-50 px-2 py-0.5 text-xs text-gray-700">Budget <X className="h-3 w-3 text-gray-500" /></span>
+                  <span className="inline-flex items-center gap-1 rounded bg-blue-50 px-2 py-0.5 text-xs text-gray-700">Unit <X className="h-3 w-3 text-gray-500" /></span>
+                  <span className="inline-flex items-center gap-1 rounded bg-blue-50 px-2 py-0.5 text-xs text-gray-700">Sub Type <X className="h-3 w-3 text-gray-500" /></span>
+                </div>
+                <X className="pointer-events-none absolute right-7 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-400" />
+                <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+              </div>
+
+              <div className="relative">
+                <input suppressHydrationWarning placeholder="Select Location" className="w-full rounded border border-gray-300 px-3 py-2 pr-8 text-sm outline-none" />
+                <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+              </div>
+            </div>
+
+            <div className="mt-3 grid grid-cols-1 gap-2 md:grid-cols-[1fr_auto]">
+              <div className="relative">
+                <input suppressHydrationWarning placeholder="Select Sub Location" className="w-full rounded border border-gray-300 px-3 py-2 pr-8 text-sm outline-none" />
+                <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+              </div>
+              <button suppressHydrationWarning type="button" className="rounded bg-[#1a56db] px-5 py-2 text-sm font-medium text-white hover:bg-blue-700">Search</button>
+            </div>
+          </div>
+
+          <div className="rounded border border-gray-200 bg-white p-3">
+            <h4 className="mb-2 text-base font-semibold text-gray-800">Suggested Projects</h4>
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[520px] text-left text-xs text-gray-600">
+                <thead className="border-y border-gray-200 bg-gray-50">
+                  <tr>
+                    <th className="w-10 px-3 py-2">
+                      <input suppressHydrationWarning type="checkbox" className="h-4 w-4 rounded border-gray-300" aria-label="Select all suggested projects" />
+                    </th>
+                    <th className="px-3 py-2">Name</th>
+                    <th className="px-3 py-2">Address</th>
+                    <th className="px-3 py-2">Type</th>
+                    <th className="px-3 py-2">Units Type</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td colSpan={5} className="px-3 py-4 text-center text-sm text-gray-500">No Data Found</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div className="rounded border border-gray-200 bg-white p-3">
+            <h4 className="mb-2 text-base font-semibold text-gray-800">Suggested Properties</h4>
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[600px] text-left text-xs text-gray-600">
+                <thead className="border-y border-gray-200 bg-gray-50">
+                  <tr>
+                    <th className="w-10 px-3 py-2">
+                      <input suppressHydrationWarning type="checkbox" className="h-4 w-4 rounded border-gray-300" aria-label="Select all suggested properties" />
+                    </th>
+                    <th className="px-3 py-2">Client Name</th>
+                    <th className="px-3 py-2">House Name</th>
+                    <th className="px-3 py-2">Project Name</th>
+                    <th className="px-3 py-2">Unit &amp; Carpet Area</th>
+                    <th className="px-3 py-2">Available From</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td colSpan={6} className="px-3 py-4 text-center text-sm text-gray-500">No Data Found</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    if (activeCenterTab === "Timeline") {
+      const pendingItem = timelineFeed[0];
+      const timelineItems = timelineFeed.slice(1);
+
+      return (
+        <div className="space-y-3">
+          <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+            <div className="rounded border border-gray-200 bg-white p-4">
+              <div className="border-l-4 border-[#1a56db] pl-4">
+                {timelineHighlights.map((item) => (
+                  <div key={item.label} className="mb-1 flex items-center justify-between text-sm text-[#3b4258] last:mb-0">
+                    <span>{item.label}</span>
+                    <span className="text-2xl">{item.value}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="rounded border border-gray-200 bg-white p-4">
+              <div className="border-l-4 border-[#1a56db] pl-4">
+                {timelineHighlightsRight.map((item) => (
+                  <div key={item.label} className="mb-1 flex items-center justify-between text-sm text-[#3b4258] last:mb-0">
+                    <span>{item.label}</span>
+                    <span className="text-2xl">{item.value}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="flex justify-end">
+            <div className="relative w-full max-w-[220px]">
+              <input suppressHydrationWarning placeholder="Select Executive" className="w-full rounded border border-gray-300 bg-white px-3 py-2 pr-8 text-sm text-gray-600 outline-none" />
+              <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+            </div>
+          </div>
+
+          <div className="rounded border border-gray-200 bg-white p-4">
+            <div className="flex items-start gap-2">
+              <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-600">
+                <ClipboardList className="h-4 w-4" />
+              </span>
+              <p className="text-sm text-[#3b4258]">
+                <strong>Remark:</strong> Panvel., "your_preferred_configuration?" : "2_bhk_", "would_you_like_to_visit_the_site?_" : "yes_", "city" : "Mumbai"
+              </p>
+            </div>
+          </div>
+
+          <div className="rounded border border-gray-200 bg-white">
+            <div className="border-b border-gray-200 px-4 py-3 text-center text-xl font-semibold text-[#3b4258]">Upcoming/Pending Tasks</div>
+            <div className="p-3">
+              {[pendingItem].map((item, idx) => (
+                <div key={`${item.title}-${item.date}-${idx}`} className="border-b border-gray-200 py-4 last:border-b-0">
+                  <div className="flex items-start gap-3">
+                    <span className={`mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${
+                      item.type === "task" ? "bg-indigo-100 text-indigo-500" : "bg-pink-100 text-pink-500"
+                    }`}>
+                      {item.type === "task" ? <ClipboardList className="h-5 w-5" /> : <CalendarDays className="h-5 w-5" />}
+                    </span>
+
+                    <div className="min-w-0 flex-1">
+                      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <p className="text-lg font-semibold text-[#3b4258]">{item.title}</p>
+                          {"status" in item ? (
+                            <span className={`px-2 py-0.5 text-xs font-semibold text-white ${item.statusTone === "completed" ? "bg-emerald-500" : "bg-rose-500"}`}>
+                              {item.status}
+                            </span>
+                          ) : null}
+                        </div>
+                        <div className="flex items-center gap-3 text-sm text-[#4a5165]">
+                          <span>{item.date}</span>
+                          <span>{item.user}</span>
+                          {item.type === "task" ? (
+                            <div className="flex gap-1">
+                              <button suppressHydrationWarning type="button" className="rounded border border-[#1a56db] p-1.5 text-[#1a56db] hover:bg-blue-50" aria-label="Mark task">
+                                <Check className="h-3.5 w-3.5" />
+                              </button>
+                              <button suppressHydrationWarning type="button" className="rounded border border-[#1a56db] p-1.5 text-[#1a56db] hover:bg-blue-50" aria-label="Edit task">
+                                <Pencil className="h-3.5 w-3.5" />
+                              </button>
+                              <button suppressHydrationWarning type="button" className="rounded border border-[#1a56db] p-1.5 text-[#1a56db] hover:bg-blue-50" aria-label="Delete task">
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </button>
+                            </div>
+                          ) : null}
+                          {item.type === "note" && "showDelete" in item && item.showDelete ? (
+                            <button suppressHydrationWarning type="button" className="rounded border border-[#1a56db] p-1.5 text-[#1a56db] hover:bg-blue-50" aria-label="Delete note">
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
+                          ) : null}
+                        </div>
+                      </div>
+
+                      {"subject" in item ? (
+                        <div className="mb-3 border-b border-gray-200 pb-2 text-sm text-[#4a5165]">
+                          <span className="mr-2 inline-block h-3 w-3 rounded-full bg-gray-300"></span>{item.subject}
+                        </div>
+                      ) : null}
+
+                      {"type" in item && item.type === "task" ? (
+                        <div className="space-y-3 text-sm text-[#4a5165]">
+                          <div className="grid gap-2 md:grid-cols-2">
+                            <div>
+                              <p className="font-semibold text-[#3b4258]">Assigned to</p>
+                              <p>{item.assignedTo}</p>
+                            </div>
+                            <div>
+                              <p className="font-semibold text-[#3b4258]">Due Date &amp; Time</p>
+                              <p>{item.dueDate}</p>
+                            </div>
+                          </div>
+                          <div className="border-b border-gray-200 pb-2">
+                            <p><span className="font-semibold text-[#3b4258]">Remark:</span> {item.remark}</p>
+                          </div>
+                          <div className="grid gap-2 md:grid-cols-2">
+                            <div>
+                              <p className="font-semibold text-[#3b4258]">Type</p>
+                              <p>{item.itemType}</p>
+                            </div>
+                            <div>
+                              <p className="font-semibold text-[#3b4258]">Created By</p>
+                              <p>{item.createdBy}</p>
+                            </div>
+                          </div>
+                          {"completedOn" in item && item.completedOn ? (
+                            <div>
+                              <p className="font-semibold text-[#3b4258]">Completed on</p>
+                              <p>{item.completedOn}</p>
+                            </div>
+                          ) : null}
+                        </div>
+                      ) : (
+                        <>
+                          {"body" in item && item.body ? <p className="border-b border-gray-200 pb-2 text-sm text-[#4a5165]">{item.body}</p> : null}
+                          {"footer" in item && item.footer ? (
+                            <p className="mt-2 text-sm text-[#4a5165]">
+                              {item.footer.includes("Source:")
+                                ? item.footer
+                                : <><span className="mr-2 inline-block h-3 w-3 rounded-full bg-gray-300"></span>{item.footer}</>}
+                            </p>
+                          ) : null}
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="rounded border border-gray-200 bg-white">
+            <div className="border-b border-gray-200 px-4 py-3 text-center text-xl font-semibold text-[#3b4258]">Timeline</div>
+            <div className="p-3">
+              {timelineItems.map((item, idx) => (
+                <div key={`${item.title}-${item.date}-${idx}`} className="border-b border-gray-200 py-4 last:border-b-0">
+                  <div className="flex items-start gap-3">
+                    <span className={`mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${
+                      item.type === "task" ? "bg-indigo-100 text-indigo-500" : "bg-pink-100 text-pink-500"
+                    }`}>
+                      {item.type === "task" ? <ClipboardList className="h-5 w-5" /> : <CalendarDays className="h-5 w-5" />}
+                    </span>
+
+                    <div className="min-w-0 flex-1">
+                      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <p className="text-lg font-semibold text-[#3b4258]">{item.title}</p>
+                          {"status" in item ? (
+                            <span className={`px-2 py-0.5 text-xs font-semibold text-white ${item.statusTone === "completed" ? "bg-emerald-500" : "bg-rose-500"}`}>
+                              {item.status}
+                            </span>
+                          ) : null}
+                        </div>
+                        <div className="flex items-center gap-3 text-sm text-[#4a5165]">
+                          <span>{item.date}</span>
+                          <span>{item.user}</span>
+                          {item.type === "task" ? (
+                            <div className="flex gap-1">
+                              <button suppressHydrationWarning type="button" className="rounded border border-[#1a56db] p-1.5 text-[#1a56db] hover:bg-blue-50" aria-label="Mark task">
+                                <Check className="h-3.5 w-3.5" />
+                              </button>
+                              <button suppressHydrationWarning type="button" className="rounded border border-[#1a56db] p-1.5 text-[#1a56db] hover:bg-blue-50" aria-label="Edit task">
+                                <Pencil className="h-3.5 w-3.5" />
+                              </button>
+                              <button suppressHydrationWarning type="button" className="rounded border border-[#1a56db] p-1.5 text-[#1a56db] hover:bg-blue-50" aria-label="Delete task">
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </button>
+                            </div>
+                          ) : null}
+                          {item.type === "note" && "showDelete" in item && item.showDelete ? (
+                            <button suppressHydrationWarning type="button" className="rounded border border-[#1a56db] p-1.5 text-[#1a56db] hover:bg-blue-50" aria-label="Delete note">
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
+                          ) : null}
+                        </div>
+                      </div>
+
+                      {"subject" in item ? (
+                        <div className="mb-3 border-b border-gray-200 pb-2 text-sm text-[#4a5165]">
+                          <span className="mr-2 inline-block h-3 w-3 rounded-full bg-gray-300"></span>{item.subject}
+                        </div>
+                      ) : null}
+
+                      {"type" in item && item.type === "task" ? (
+                        <div className="space-y-3 text-sm text-[#4a5165]">
+                          <div className="grid gap-2 md:grid-cols-2">
+                            <div>
+                              <p className="font-semibold text-[#3b4258]">Assigned to</p>
+                              <p>{item.assignedTo}</p>
+                            </div>
+                            <div>
+                              <p className="font-semibold text-[#3b4258]">Due Date &amp; Time</p>
+                              <p>{item.dueDate}</p>
+                            </div>
+                          </div>
+                          <div className="border-b border-gray-200 pb-2">
+                            <p><span className="font-semibold text-[#3b4258]">Remark:</span> {item.remark}</p>
+                          </div>
+                          <div className="grid gap-2 md:grid-cols-2">
+                            <div>
+                              <p className="font-semibold text-[#3b4258]">Type</p>
+                              <p>{item.itemType}</p>
+                            </div>
+                            <div>
+                              <p className="font-semibold text-[#3b4258]">Created By</p>
+                              <p>{item.createdBy}</p>
+                            </div>
+                          </div>
+                          {"completedOn" in item && item.completedOn ? (
+                            <div>
+                              <p className="font-semibold text-[#3b4258]">Completed on</p>
+                              <p>{item.completedOn}</p>
+                            </div>
+                          ) : null}
+                        </div>
+                      ) : (
+                        <>
+                          {"body" in item && item.body ? <p className="border-b border-gray-200 pb-2 text-sm text-[#4a5165]">{item.body}</p> : null}
+                          {"footer" in item && item.footer ? (
+                            <p className="mt-2 text-sm text-[#4a5165]">
+                              {item.footer.includes("Source:")
+                                ? item.footer
+                                : <><span className="mr-2 inline-block h-3 w-3 rounded-full bg-gray-300"></span>{item.footer}</>}
+                            </p>
+                          ) : null}
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    if (activeCenterTab === "Followup") {
+      return (
+        <div className="space-y-4">
+          {followupFeed.map((item, idx) => (
+            <div key={`${item.title}-${item.date}-${idx}`} className="rounded border border-gray-200 bg-white p-5">
+              <div className="flex items-start gap-3">
+                <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-indigo-500">
+                  <ClipboardList className="h-4 w-4" />
+                </span>
+
+                <div className="min-w-0 flex-1">
+                  <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <p className="text-lg font-semibold text-[#3b4258]">{item.title}</p>
+                      <span className={`px-2 py-0.5 text-xs font-semibold text-white ${item.statusTone === "completed" ? "bg-emerald-500" : "bg-rose-500"}`}>
+                        {item.status}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3 text-sm text-[#4a5165]">
+                      <span>{item.date}</span>
+                      <span>{item.user}</span>
+                      {"showActions" in item && item.showActions ? (
+                        <div className="flex gap-1">
+                          <button suppressHydrationWarning type="button" className="rounded border border-[#1a56db] p-1.5 text-[#1a56db] hover:bg-blue-50" aria-label="Mark followup task">
+                            <Check className="h-3.5 w-3.5" />
+                          </button>
+                          <button suppressHydrationWarning type="button" className="rounded border border-[#1a56db] p-1.5 text-[#1a56db] hover:bg-blue-50" aria-label="Edit followup task">
+                            <Pencil className="h-3.5 w-3.5" />
+                          </button>
+                          <button suppressHydrationWarning type="button" className="rounded border border-[#1a56db] p-1.5 text-[#1a56db] hover:bg-blue-50" aria-label="Delete followup task">
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      ) : null}
+                    </div>
+                  </div>
+
+                  <div className="mb-3 border-b border-gray-200 pb-2 text-sm text-[#4a5165]">
+                    <span className="mr-2 inline-block h-3 w-3 rounded-full bg-gray-300"></span>{item.subject}
+                  </div>
+
+                  <div className="space-y-3 text-sm text-[#4a5165]">
+                    <div className="grid gap-2 md:grid-cols-2">
+                      <div>
+                        <p className="font-semibold text-[#3b4258]">Assigned to</p>
+                        <p>{item.assignedTo}</p>
+                      </div>
+                      <div>
+                        <p className="font-semibold text-[#3b4258]">Due Date &amp; Time</p>
+                        <p>{item.dueDate}</p>
+                      </div>
+                    </div>
+                    <div className="border-b border-gray-200 pb-2">
+                      <p><span className="font-semibold text-[#3b4258]">Remark:</span> {item.remark}</p>
+                    </div>
+                    <div className="grid gap-2 md:grid-cols-2">
+                      <div>
+                        <p className="font-semibold text-[#3b4258]">Type</p>
+                        <p>{item.itemType}</p>
+                      </div>
+                      <div>
+                        <p className="font-semibold text-[#3b4258]">Created By</p>
+                        <p>{item.createdBy}</p>
+                      </div>
+                    </div>
+                    {"completedOn" in item && item.completedOn ? (
+                      <div>
+                        <p className="font-semibold text-[#3b4258]">Completed on</p>
+                        <p>{item.completedOn}</p>
+                      </div>
+                    ) : null}
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      );
+    }
+
+    if (activeCenterTab === "Call") {
+      return (
+        <div className="space-y-4">
+          {callFeed.map((item, idx) => (
+            <div key={`${item.title}-${item.date}-${idx}`} className="rounded border border-gray-200 bg-white p-5">
+              <div className="flex items-start gap-3">
+                <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-pink-100 text-pink-500">
+                  <CalendarDays className="h-4 w-4" />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                    <p className="text-lg font-semibold text-[#3b4258]">{item.title}</p>
+                    <div className="flex items-center gap-3 text-sm text-[#4a5165]">
+                      <span>{item.date}</span>
+                      <span>{item.user}</span>
+                    </div>
+                  </div>
+                  <p className="border-b border-gray-200 pb-2 text-sm text-[#4a5165]">{item.body}</p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      );
+    }
+
+    if (activeCenterTab === "Site Visit" || activeCenterTab === "Meeting" || activeCenterTab === "E-Mail" || activeCenterTab === "SMS") {
+      return (
+        <div className="rounded border border-gray-200 bg-white px-4 py-7 text-center">
+          <p className="text-3xl font-semibold text-[#3b4258]">No Data Found</p>
+        </div>
+      );
+    }
+
+    if (activeCenterTab === "WhatsApp") {
+      return (
+        <div className="rounded border border-gray-200 bg-white">
+          <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3">
+            <h4 className="text-2xl font-semibold text-[#2f374b]">Saumittra Mathur</h4>
+            <button suppressHydrationWarning type="button" className="rounded p-1 text-[#2f374b] hover:bg-gray-100" aria-label="Refresh whatsapp thread">
+              <RefreshCw className="h-4 w-4" />
+            </button>
+          </div>
+
+          <div className="min-h-[520px] border-b border-gray-200 bg-white"></div>
+
+          <div className="flex items-center gap-2 bg-[#eef2f6] px-4 py-3">
+            <button suppressHydrationWarning type="button" className="inline-flex h-8 w-8 items-center justify-center rounded bg-[#1a56db] text-white" aria-label="Attach whatsapp template">
+              <Plus className="h-4 w-4" />
+            </button>
+            <input
+              suppressHydrationWarning
+              readOnly
+              value="Chat closed. Please send Template Message"
+              className="h-8 flex-1 rounded border border-gray-300 bg-[#dfe4ea] px-3 text-sm text-gray-600 outline-none"
+            />
+            <button suppressHydrationWarning type="button" className="h-8 rounded bg-[#5b8fd8] px-5 text-sm font-medium text-white hover:bg-[#4e82ca]">
+              Reply
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    if (activeCenterTab === "Documents") {
+      return (
+        <div className="relative">
+          <div className="rounded border border-gray-200 bg-white">
+            <div className="flex items-center justify-between border-b border-gray-200 px-4 py-4">
+              <div className="flex items-center gap-2">
+                <h4 className="text-2xl font-semibold text-[#3b4258]">Lead Documents</h4>
+                <span className="inline-flex h-8 min-w-8 items-center justify-center rounded-full bg-emerald-400 px-2 text-sm font-semibold text-white">0</span>
+              </div>
+              <button
+                suppressHydrationWarning
+                type="button"
+                onClick={() => setDocumentsModalOpen(true)}
+                className="inline-flex items-center gap-2 rounded bg-[#1a56db] px-3 py-2 text-sm font-medium text-white hover:bg-blue-700"
+              >
+                <span className="inline-flex h-4 w-4 items-center justify-center rounded bg-white/20">
+                  <Plus className="h-3.5 w-3.5" />
+                </span>
+                Upload New Documents
+              </button>
+            </div>
+
+            <div className="p-4">
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[560px] text-left text-sm text-[#4a5165]">
+                  <thead className="border border-gray-200 bg-gray-50">
+                    <tr>
+                      <th className="w-[70px] px-3 py-2">#</th>
+                      <th className="w-[170px] px-3 py-2">Preview</th>
+                      <th className="px-3 py-2">Description</th>
+                      <th className="w-[160px] px-3 py-2">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr className="border border-gray-200">
+                      <td className="px-3 py-2"></td>
+                      <td className="px-3 py-2"></td>
+                      <td className="px-3 py-2 text-base text-[#4a5165]">No Documents Found</td>
+                      <td className="px-3 py-2"></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          {documentsModalOpen ? (
+            <div className="absolute inset-0 z-20 flex items-start justify-center bg-black/60 p-6">
+              <div className="w-full max-w-[900px] rounded border border-gray-200 bg-white shadow-2xl">
+                <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3">
+                  <h5 className="text-2xl font-semibold text-[#3b4258]">Add Documents</h5>
+                  <button
+                    suppressHydrationWarning
+                    type="button"
+                    onClick={() => setDocumentsModalOpen(false)}
+                    className="rounded border border-gray-500 p-1 text-gray-600 hover:bg-gray-100"
+                    aria-label="Close add documents modal"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+
+                <div className="p-5">
+                  <div className="overflow-x-auto">
+                    <table className="w-full min-w-[560px] text-left text-sm text-[#4a5165]">
+                      <thead className="border border-gray-200 bg-gray-50">
+                        <tr>
+                          <th className="w-[70px] px-3 py-2">#</th>
+                          <th className="w-[170px] px-3 py-2">Preview</th>
+                          <th className="px-3 py-2">Description</th>
+                          <th className="w-[160px] px-3 py-2">Action</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr className="border border-gray-200">
+                          <td className="px-3 py-2"></td>
+                          <td className="px-3 py-2"></td>
+                          <td className="px-3 py-2 text-base text-[#4a5165]">No Documents Founds</td>
+                          <td className="px-3 py-2"></td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
+                    <button suppressHydrationWarning type="button" className="rounded bg-[#1a56db] px-4 py-2 text-lg font-semibold text-white hover:bg-blue-700">Choose</button>
+                    <button suppressHydrationWarning type="button" className="rounded bg-[#ff5a24] px-4 py-2 text-lg font-semibold text-white hover:bg-[#e44f20]">Add Link Url</button>
+                    <button suppressHydrationWarning type="button" onClick={() => setDocumentsModalOpen(false)} className="rounded bg-rose-500 px-4 py-2 text-lg font-semibold text-white hover:bg-rose-600">✖ Cancel</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : null}
+        </div>
+      );
+    }
+
+    if (activeCenterTab === "Projects") {
+      return (
+        <div className="rounded border border-gray-200 bg-white">
+          <div className="border-b border-gray-200 px-4 py-4">
+            <h4 className="text-2xl font-semibold text-[#3b4258]">Interested Projects</h4>
+          </div>
+          <div className="p-4">
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+              <div className="relative w-full max-w-[300px]">
+                <input suppressHydrationWarning placeholder="Search & Select Project" className="w-full rounded border border-gray-300 bg-white px-3 py-2 pr-8 text-sm text-gray-600 outline-none" />
+                <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+              </div>
+              <button suppressHydrationWarning type="button" className="inline-flex items-center rounded overflow-hidden border border-[#1a56db]">
+                <span className="inline-flex h-9 w-9 items-center justify-center bg-[#1a56db] text-white">
+                  <Plus className="h-4 w-4" />
+                </span>
+                <span className="bg-[#1a56db] px-4 py-2 text-sm font-medium text-white">Add</span>
+              </button>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[620px] text-left text-sm text-[#4a5165]">
+                <thead className="border border-gray-200 bg-gray-50 text-xs uppercase text-gray-500">
+                  <tr>
+                    <th className="px-3 py-2">Sr.No</th>
+                    <th className="px-3 py-2">ID</th>
+                    <th className="px-3 py-2">Name</th>
+                    <th className="px-3 py-2">Address</th>
+                    <th className="px-3 py-2">Type</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr className="border border-gray-200">
+                    <td className="px-3 py-2">1</td>
+                    <td className="px-3 py-2">20</td>
+                    <td className="px-3 py-2">SAI WORLD CITY</td>
+                    <td className="px-3 py-2"></td>
+                    <td className="px-3 py-2">-</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-3">
+        <div className="rounded border border-gray-200 bg-white p-3">
+          <div className="mb-3 flex items-center justify-between">
+            <h4 className="text-base font-semibold text-gray-800">{activeCenterTab}</h4>
+            <button suppressHydrationWarning type="button" className="rounded bg-[#1a56db] px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700">Add New</button>
+          </div>
+          <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
+            <input suppressHydrationWarning placeholder="Title" className="rounded border border-gray-300 px-3 py-2 text-sm outline-none" />
+            <input suppressHydrationWarning placeholder="Schedule Date" className="rounded border border-gray-300 px-3 py-2 text-sm outline-none" />
+            <textarea suppressHydrationWarning rows={3} placeholder="Remark" className="md:col-span-2 rounded border border-gray-300 px-3 py-2 text-sm outline-none" />
+          </div>
+        </div>
+
+        <div className="rounded border border-gray-200 bg-white p-3">
+          <h5 className="mb-2 text-sm font-semibold text-gray-800">Recent {activeCenterTab}</h5>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[520px] text-left text-xs text-gray-600">
+              <thead className="border-y border-gray-200 bg-gray-50">
+                <tr>
+                  <th className="px-3 py-2">Title</th>
+                  <th className="px-3 py-2">Owner</th>
+                  <th className="px-3 py-2">Date</th>
+                  <th className="px-3 py-2">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td colSpan={4} className="px-3 py-4 text-center text-sm text-gray-500">No Data Found</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  if (!open) return null;
+
+  return (
+    <div className="fixed inset-0 z-[140] bg-black/45">
+      <div className="absolute inset-y-0 right-0 w-[min(96vw,1500px)] rounded-l-md border-l border-gray-200 bg-[#f4f7f6] shadow-2xl">
+        <div className="flex h-full flex-col">
+          <div className="flex items-center justify-between border-b border-gray-200 bg-white px-4 py-3">
+            <h3 className="text-2xl font-semibold text-gray-800">Lead Information</h3>
+            <button suppressHydrationWarning type="button" onClick={onClose} className="rounded p-1 text-gray-500 hover:bg-gray-100" aria-label="Close lead information drawer">
+              <X className="h-5 w-5" />
+            </button>
+          </div>
+
+          <div className="min-h-0 flex-1 overflow-y-auto p-3">
+            <div className="grid grid-cols-1 gap-3 xl:grid-cols-[260px_1fr_360px]">
+              <div className="rounded border border-gray-200 bg-white p-3">
+                <div className="mb-3 inline-flex rounded bg-gray-100 px-2 py-1 text-xs text-gray-700">#14883</div>
+                <div className="mb-3 flex flex-col items-center">
+                  <div className="mb-2 flex h-20 w-20 items-center justify-center rounded-full bg-purple-500 text-4xl font-semibold text-white">
+                    {(leadName || "L").slice(0, 2).toUpperCase()}
+                  </div>
+                  <p className="text-xl font-medium text-gray-800">{leadName}</p>
+                </div>
+
+                <div className="mb-4 grid grid-cols-6 gap-2">
+                  {quickActions.map((qa) => (
+                    <button
+                      key={qa}
+                      suppressHydrationWarning
+                      type="button"
+                      onClick={() => setActiveQuickModal(qa.toLowerCase() as "wa" | "note" | "email" | "call" | "sms" | "task")}
+                      className="flex flex-col items-center gap-1 rounded px-1 py-1 text-[11px] text-gray-700 hover:bg-gray-50"
+                    >
+                      <span className={`flex h-9 w-9 items-center justify-center rounded-full ${quickActionMeta[qa].shell}`}>
+                        {React.createElement(quickActionMeta[qa].icon, { className: `h-4 w-4 ${quickActionMeta[qa].iconColor}` })}
+                      </span>
+                      <span className="text-sm leading-none text-[#4a5165]">{qa}</span>
+                    </button>
+                  ))}
+                </div>
+
+                <div className="space-y-4 text-xs">
+                  <div className="border-t border-gray-200 pt-3">
+                    <p className="mb-1 text-sm font-semibold text-[#3f495f]">Lead Stage</p>
+                    <div className="relative">
+                      <select suppressHydrationWarning className="w-full appearance-none rounded border border-gray-300 bg-white px-3 py-1.5 text-xs text-[#2f374b] outline-none">
+                        <option>Call Back</option>
+                        <option>New Lead</option>
+                        <option>Follow Up</option>
+                      </select>
+                      <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
+                    </div>
+                  </div>
+
+                  <div className="border-t border-gray-200 pt-3">
+                    <p className="mb-1 text-sm font-semibold text-[#3f495f]">Lead Category</p>
+                    <div className="relative">
+                      <select suppressHydrationWarning className="w-full appearance-none rounded border border-gray-300 bg-white px-3 py-1.5 text-xs text-[#2f374b] outline-none">
+                        <option></option>
+                        <option>Hot</option>
+                        <option>Warm</option>
+                        <option>Cold</option>
+                      </select>
+                      <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
+                    </div>
+                  </div>
+
+                  <div className="border-t border-gray-200 pt-3">
+                    <p className="mb-2 text-lg font-semibold text-[#3f495f]">Contact Information</p>
+                    <div className="space-y-3">
+                      <div className="border-b border-dashed border-gray-200 pb-2">
+                        <p className="text-sm font-semibold text-[#3f495f]">E-mail</p>
+                        <p className="text-sm text-[#2f374b]"></p>
+                      </div>
+                      <div className="border-b border-dashed border-gray-200 pb-2">
+                        <p className="text-sm font-semibold text-[#3f495f]">Phone</p>
+                        <p className="text-sm text-[#2f374b]">+91-9970094776</p>
+                      </div>
+                      <div className="border-b border-dashed border-gray-200 pb-2">
+                        <p className="mb-1 text-sm font-semibold text-[#3f495f]">Country</p>
+                        <div className="relative">
+                          <select suppressHydrationWarning className="w-full appearance-none rounded border border-gray-300 bg-white px-3 py-1.5 text-xs text-[#2f374b] outline-none">
+                            <option></option>
+                            <option>India</option>
+                          </select>
+                          <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="border-t border-gray-200 pt-3">
+                    <p className="mb-2 text-lg font-semibold text-[#3f495f]">About Lead</p>
+                    <div className="space-y-3">
+                      <div className="border-b border-dashed border-gray-200 pb-2">
+                        <p className="text-sm font-semibold text-[#3f495f]">Pre Sales Agent</p>
+                        <p className="text-sm text-[#2f374b]">Not Available</p>
+                      </div>
+                      <div className="border-b border-dashed border-gray-200 pb-2">
+                        <p className="text-sm font-semibold text-[#3f495f]">Lead Owner</p>
+                        <p className="text-sm text-[#2f374b]">Ajay Jaiswal</p>
+                      </div>
+                      <div className="border-b border-dashed border-gray-200 pb-2">
+                        <p className="text-sm font-semibold text-[#3f495f]">Co-Owner</p>
+                        <p className="text-sm text-[#2f374b]">Not Available</p>
+                      </div>
+                      <div className="border-b border-dashed border-gray-200 pb-2">
+                        <p className="text-sm font-semibold text-[#3f495f]">Sourcing Manager</p>
+                        <p className="text-sm text-[#2f374b]">Not Available</p>
+                      </div>
+                      <div className="border-b border-dashed border-gray-200 pb-2">
+                        <p className="text-sm font-semibold text-[#3f495f]">Lead Created By</p>
+                        <p className="text-sm text-[#2f374b]"></p>
+                      </div>
+                      <div className="border-b border-dashed border-gray-200 pb-2">
+                        <p className="text-sm font-semibold text-[#3f495f]">Created Date</p>
+                        <p className="text-sm text-[#2f374b]">Apr 01, 2026, 7:35 AM</p>
+                      </div>
+                      <div className="border-b border-dashed border-gray-200 pb-2">
+                        <p className="text-sm font-semibold text-[#3f495f]">Assigned Date</p>
+                        <p className="text-sm text-[#2f374b]">Apr 01, 2026, 11:08 AM</p>
+                      </div>
+                      <div className="border-b border-dashed border-gray-200 pb-2">
+                        <p className="text-sm font-semibold text-[#3f495f]">Source</p>
+                        <p className="text-sm text-[#2f374b]">IG</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <div className="rounded border border-gray-200 bg-white p-2">
+                  <div className="mb-2 flex flex-wrap gap-2">
+                    {centerTabs.map((tab, idx) => (
+                      <button
+                        key={tab}
+                        suppressHydrationWarning
+                        type="button"
+                        onClick={() => setActiveCenterTab(tab)}
+                        className={`rounded px-3 py-1.5 text-xs ${activeCenterTab === tab ? "bg-[#1a56db] text-white" : "bg-gray-50 text-gray-700 hover:bg-gray-100"}`}
+                      >
+                        {tab}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                {renderCenterSection()}
+              </div>
+
+              <div className="rounded border border-gray-200 bg-white p-3">
+                <h4 className="mb-3 text-2xl font-semibold text-gray-800">Details</h4>
+                <div className="space-y-3">
+                  {detailSections.map((section) => (
+                    <div key={section.title} className="rounded border border-gray-200">
+                      <div className="border-b border-gray-200 bg-gray-50 px-2 py-1.5 text-sm font-semibold text-gray-700">{section.title}</div>
+                      {section.rows.map(([label, value]) => (
+                        <div key={label} className="grid grid-cols-2 border-b border-gray-100 last:border-b-0">
+                          <div className="px-2 py-1.5 text-xs font-semibold text-gray-700">{label}</div>
+                          <div className="px-2 py-1.5 text-xs text-gray-600">{value}</div>
+                        </div>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {activeQuickModal ? (
+        <div className="fixed inset-0 z-[150] flex items-start justify-center bg-black/50 p-4">
+          {activeQuickModal === "wa" ? (
+            <div className="w-full max-w-[980px] rounded border border-gray-200 bg-white shadow-2xl">
+              <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3">
+                <h4 className="text-lg font-semibold text-gray-800">Template</h4>
+                <button suppressHydrationWarning type="button" onClick={() => setActiveQuickModal(null)} className="rounded border border-gray-500 p-1 text-gray-600 hover:bg-gray-100">
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+              <div className="space-y-4 px-4 py-4">
+                <p className="text-sm text-gray-700">You can choose a predefined template and click on send button, but It&apos;s completely optional. You can also send without selecting template.</p>
+                <div>
+                  <label className="mb-1 block text-sm font-semibold text-gray-700">Choose WhatsApp Template</label>
+                  <div className="relative">
+                    <select suppressHydrationWarning className="w-full appearance-none rounded border border-gray-300 px-3 py-2 text-sm text-gray-600 outline-none">
+                      <option>Select Template</option>
+                    </select>
+                    <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                  </div>
+                </div>
+              </div>
+              <div className="flex justify-end border-t border-gray-200 px-4 py-3">
+                <button suppressHydrationWarning type="button" className="rounded bg-[#1a56db] px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">Send</button>
+              </div>
+            </div>
+          ) : null}
+
+          {activeQuickModal === "note" ? (
+            <div className="w-full max-w-[720px] rounded border border-gray-200 bg-white shadow-2xl">
+              <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3">
+                <h4 className="text-[30px] font-semibold text-gray-800">Add Note</h4>
+                <button suppressHydrationWarning type="button" onClick={() => setActiveQuickModal(null)} className="rounded border border-gray-500 p-1 text-gray-600 hover:bg-gray-100">
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+              <div className="px-4 py-4">
+                <label className="mb-1 block text-sm font-semibold text-gray-700">Note</label>
+                <textarea suppressHydrationWarning rows={3} placeholder="Enter Notes" className="w-full rounded border border-gray-300 px-3 py-2 text-sm outline-none" />
+              </div>
+              <div className="flex justify-end gap-2 border-t border-gray-200 px-4 py-3">
+                <button suppressHydrationWarning type="button" className="rounded bg-[#1a56db] px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">Submit</button>
+                <button suppressHydrationWarning type="button" onClick={() => setActiveQuickModal(null)} className="rounded bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200">Cancel</button>
+              </div>
+            </div>
+          ) : null}
+
+          {activeQuickModal === "email" ? (
+            <div className="w-full max-w-[1200px] rounded border border-gray-200 bg-white shadow-2xl">
+              <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3">
+                <h4 className="text-lg font-semibold text-gray-800">Compose Mail</h4>
+                <button suppressHydrationWarning type="button" onClick={() => setActiveQuickModal(null)} className="rounded border border-gray-500 p-1 text-gray-600 hover:bg-gray-100">
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+              <div className="space-y-3 px-4 py-4">
+                <div>
+                  <label className="mb-1 block text-xs font-semibold text-gray-700">Select Template</label>
+                  <div className="relative">
+                    <select suppressHydrationWarning className="w-full appearance-none rounded border border-gray-300 px-3 py-2 text-sm text-gray-600 outline-none">
+                      <option>Select Templates</option>
+                    </select>
+                    <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                  <input suppressHydrationWarning placeholder="From Email Name" className="rounded border border-gray-300 px-3 py-2 text-sm outline-none" />
+                  <input suppressHydrationWarning placeholder="From Email" className="rounded border border-gray-300 px-3 py-2 text-sm outline-none" />
+                  <input suppressHydrationWarning placeholder="Mail To: Type & Press Enter" className="rounded border border-gray-300 px-3 py-2 text-sm outline-none" />
+                  <input suppressHydrationWarning placeholder="Reply To: Type & Press Enter" className="rounded border border-gray-300 px-3 py-2 text-sm outline-none" />
+                </div>
+                <input suppressHydrationWarning placeholder="Enter Subject for the mail." className="w-full rounded border border-gray-300 px-3 py-2 text-sm outline-none" />
+                <div className="rounded border border-gray-300">
+                  <div className="border-b border-gray-200 px-2 py-1 text-xs text-gray-600">B I U • Heading • Link • Align</div>
+                  <textarea suppressHydrationWarning rows={6} placeholder="Compose Mail" className="w-full resize-y px-3 py-2 text-sm outline-none" />
+                </div>
+              </div>
+              <div className="flex justify-end gap-2 border-t border-gray-200 px-4 py-3">
+                <button suppressHydrationWarning type="button" className="rounded bg-[#1a56db] px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">Send</button>
+                <button suppressHydrationWarning type="button" className="rounded bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200">Clear</button>
+              </div>
+            </div>
+          ) : null}
+
+          {activeQuickModal === "call" ? (
+            <div className="w-full max-w-[560px] rounded border border-gray-200 bg-white shadow-2xl">
+              <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3">
+                <h4 className="text-xl font-semibold text-gray-800">Please Select Number</h4>
+                <button suppressHydrationWarning type="button" onClick={() => setActiveQuickModal(null)} className="rounded border border-gray-500 p-1 text-gray-600 hover:bg-gray-100">
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+              <div className="flex items-center justify-between gap-3 px-4 py-4">
+                <label className="inline-flex items-center gap-2 text-base text-gray-700">
+                  <input suppressHydrationWarning type="radio" name="call-number" className="h-4 w-4" defaultChecked />
+                  +91-9970094776 (Primary No.)
+                </label>
+                <button suppressHydrationWarning type="button" className="rounded bg-[#7ea8df] px-5 py-2 text-base font-medium text-white hover:bg-[#6a97d2]">Call</button>
+              </div>
+            </div>
+          ) : null}
+
+          {activeQuickModal === "sms" ? (
+            <div className="w-full max-w-[760px] rounded border border-gray-200 bg-white shadow-2xl">
+              <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3">
+                <h4 className="text-lg font-semibold text-gray-800">Send SMS</h4>
+                <button suppressHydrationWarning type="button" onClick={() => setActiveQuickModal(null)} className="rounded border border-gray-500 p-1 text-gray-600 hover:bg-gray-100">
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+              <div className="space-y-3 px-4 py-4">
+                <div className="relative">
+                  <select suppressHydrationWarning className="w-full appearance-none rounded border border-gray-300 px-3 py-2 text-sm text-gray-600 outline-none">
+                    <option>Select Template</option>
+                  </select>
+                  <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                </div>
+                <input suppressHydrationWarning placeholder="Sender Name" className="w-full rounded border border-gray-300 bg-gray-50 px-3 py-2 text-sm outline-none" />
+                <input suppressHydrationWarning placeholder="Message To: 9970094776  + Contact Number" className="w-full rounded border border-gray-300 px-3 py-2 text-sm outline-none" />
+                <textarea suppressHydrationWarning rows={3} placeholder="Enter Message." className="w-full rounded border border-gray-300 bg-gray-50 px-3 py-2 text-sm outline-none" />
+              </div>
+              <div className="flex justify-end gap-2 border-t border-gray-200 px-4 py-3">
+                <button suppressHydrationWarning type="button" className="rounded bg-[#1a56db] px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">Send</button>
+                <button suppressHydrationWarning type="button" className="rounded bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200">Clear</button>
+              </div>
+            </div>
+          ) : null}
+
+          {activeQuickModal === "task" ? (
+            <div className="w-full max-w-[760px] rounded border border-gray-200 bg-white shadow-2xl">
+              <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3">
+                <h4 className="text-lg font-semibold text-gray-800">Add Task for {leadName}</h4>
+                <button suppressHydrationWarning type="button" onClick={() => setActiveQuickModal(null)} className="rounded border border-gray-500 p-1 text-gray-600 hover:bg-gray-100">
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+              <div className="space-y-3 px-4 py-4">
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                  <input suppressHydrationWarning defaultValue="Call" className="rounded border border-gray-300 px-3 py-2 text-sm outline-none" />
+                  <input suppressHydrationWarning defaultValue="Aman Dubey" className="rounded border border-gray-300 px-3 py-2 text-sm outline-none" />
+                </div>
+                <input suppressHydrationWarning defaultValue="Call at Apr 28, 2026, 2:04 PM" className="w-full rounded border border-gray-300 px-3 py-2 text-sm outline-none" />
+                <textarea suppressHydrationWarning rows={3} placeholder="Enter Remark" className="w-full rounded border border-gray-300 px-3 py-2 text-sm outline-none" />
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                  <div className="flex items-center justify-between rounded border border-gray-200 px-3 py-2 text-sm">
+                    <span>Remind me?</span>
+                    <span className="inline-flex h-5 w-9 rounded-full bg-[#1a56db]/20 p-0.5"><span className="h-4 w-4 rounded-full bg-[#1a56db]" /></span>
+                  </div>
+                  <div className="flex items-center justify-between rounded border border-gray-200 px-3 py-2 text-sm">
+                    <span>Completed?</span>
+                    <span className="inline-flex h-5 w-9 rounded-full bg-gray-200 p-0.5"><span className="h-4 w-4 rounded-full bg-white" /></span>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                  <div className="flex overflow-hidden rounded border border-gray-300">
+                    <input suppressHydrationWarning defaultValue="Apr 28, 2026, 2:04 PM" className="w-full px-3 py-2 text-sm outline-none" />
+                    <button suppressHydrationWarning type="button" className="border-l border-gray-300 bg-gray-100 px-3 text-gray-600">
+                      <CalendarDays className="h-4 w-4" />
+                    </button>
+                  </div>
+                  <input suppressHydrationWarning defaultValue="15 Minute" className="rounded border border-gray-300 px-3 py-2 text-sm outline-none" />
+                </div>
+              </div>
+              <div className="flex justify-end gap-2 border-t border-gray-200 px-4 py-3">
+                <button suppressHydrationWarning type="button" className="rounded bg-[#1a56db] px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">Submit</button>
+                <button suppressHydrationWarning type="button" onClick={() => setActiveQuickModal(null)} className="rounded bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200">Cancel</button>
+              </div>
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function SiteVisitTableRow({ no, date, lead, mobile, frequency, project, schDate, title, remark, assignedBy, assignedTo, preSalesAgent, channelPartner, isCpPresent, sourcingAgent, visitType, stage, source, feedbackStatus, feedback, status, completedOn, completedBy, onLeadClick }: { no: string, date: string, lead: string, mobile: string, frequency: string, project: string, schDate: string, title: string, remark: string, assignedBy: string, assignedTo: string, preSalesAgent: string, channelPartner: string, isCpPresent: string, sourcingAgent: string, visitType: string, stage: string, source: string, feedbackStatus: string, feedback: string, status: string, completedOn: string, completedBy: string, onLeadClick?: (lead: string) => void }) {
   return (
     <tr className="hover:bg-gray-50 text-[13px] text-gray-600">
       <td className="py-2.5 px-4 border-r border-gray-100"><input suppressHydrationWarning type="checkbox" className="rounded border-gray-300" /></td>
       <td className="py-2.5 px-3 border-r border-gray-100 text-center">{no}</td>
       <td className="py-2.5 px-4 border-r border-gray-100 whitespace-nowrap">{date}</td>
-      <td className="py-2.5 px-4 border-r border-gray-100 whitespace-nowrap"><a href="#" className="text-[#1a56db] hover:underline font-medium">{lead}</a></td>
+      <td className="py-2.5 px-4 border-r border-gray-100 whitespace-nowrap">
+        <button
+          suppressHydrationWarning
+          type="button"
+          className="text-[#1a56db] hover:underline font-medium"
+          onClick={() => onLeadClick?.(lead)}
+        >
+          {lead}
+        </button>
+      </td>
       <td className="py-2.5 px-4 border-r border-gray-100 whitespace-nowrap">{mobile}</td>
       <td className="py-2.5 px-4 border-r border-gray-100 whitespace-nowrap">
         <span className="bg-[#1a56db] text-white text-[10px] px-2 py-1 rounded font-medium uppercase tracking-wider">Lead</span>

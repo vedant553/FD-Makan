@@ -3,15 +3,22 @@
 @tailwind utilities;
 
 :root {
+  /* App shell */
   --background: 210 33% 98%;
   --foreground: 224 36% 12%;
   --card: 0 0% 100%;
   --card-foreground: 224 36% 12%;
-  --primary: 210 90% 40%;
-  --primary-foreground: 210 40% 98%;
+  /* Brand primary — aligns with CRM modules (#1a56db) */
+  --primary: 221 79% 48%;
+  --primary-foreground: 0 0% 100%;
   --muted: 210 22% 92%;
   --muted-foreground: 215 16% 42%;
   --border: 214 26% 86%;
+  /* Page canvas behind white panels (lists, tables) */
+  --crm-canvas: 150 14% 96%;
+  /* Accent (filters, highlights) — orange */
+  --accent: 25 95% 53%;
+  --accent-foreground: 0 0% 100%;
 }
 
 * {

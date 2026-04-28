@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
+import Link from "next/link";
 import { 
   Users, User, RefreshCcw, Hand, UserMinus, 
   ClipboardList, Home, Phone,
@@ -27,11 +28,21 @@ export default function DashboardPage() {
           </div>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-          <MetricCard title="Total Leads" value="8665" icon={<Users className="w-5 h-5 text-indigo-600" />} iconBg="bg-indigo-100" />
-          <MetricCard title="Fresh Leads" value="7874" icon={<User className="w-5 h-5 text-blue-500" />} iconBg="bg-blue-100" />
-          <MetricCard title="Returning" value="791" icon={<RefreshCcw className="w-5 h-5 text-red-400" />} iconBg="bg-red-100" />
-          <MetricCard title="Untouched" value="0" icon={<Hand className="w-5 h-5 text-yellow-500" />} iconBg="bg-yellow-100" />
-          <MetricCard title="Unassigned" value="0" icon={<UserMinus className="w-5 h-5 text-green-500" />} iconBg="bg-green-100" />
+          <Link href="/crm/leads" className="block">
+            <MetricCard title="Total Leads" value="8665" icon={<Users className="w-5 h-5 text-indigo-600" />} iconBg="bg-indigo-100" />
+          </Link>
+          <Link href="/crm/leads" className="block">
+            <MetricCard title="Fresh Leads" value="7874" icon={<User className="w-5 h-5 text-blue-500" />} iconBg="bg-blue-100" />
+          </Link>
+          <Link href="/crm/leads" className="block">
+            <MetricCard title="Returning" value="791" icon={<RefreshCcw className="w-5 h-5 text-red-400" />} iconBg="bg-red-100" />
+          </Link>
+          <Link href="/crm/leads" className="block">
+            <MetricCard title="Untouched" value="0" icon={<Hand className="w-5 h-5 text-yellow-500" />} iconBg="bg-yellow-100" />
+          </Link>
+          <Link href="/crm/leads" className="block">
+            <MetricCard title="Unassigned" value="0" icon={<UserMinus className="w-5 h-5 text-green-500" />} iconBg="bg-green-100" />
+          </Link>
         </div>
       </section>
 
@@ -49,11 +60,21 @@ export default function DashboardPage() {
           </div>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-          <MetricCard title="Leads" value="7" icon={<Users className="w-5 h-5 text-indigo-600" />} iconBg="bg-indigo-100" />
-          <MetricCard title="Fresh Leads" value="7" icon={<User className="w-5 h-5 text-blue-500" />} iconBg="bg-blue-100" />
-          <MetricCard title="Returning" value="1" icon={<RefreshCcw className="w-5 h-5 text-red-400" />} iconBg="bg-red-100" />
-          <MetricCard title="Tasks" value="34" icon={<ClipboardList className="w-5 h-5 text-yellow-500" />} iconBg="bg-yellow-100" />
-          <MetricCard title="Site Visits" value="0" icon={<Home className="w-5 h-5 text-green-500" />} iconBg="bg-green-100" />
+          <Link href="/crm/leads" className="block">
+            <MetricCard title="Leads" value="7" icon={<Users className="w-5 h-5 text-indigo-600" />} iconBg="bg-indigo-100" />
+          </Link>
+          <Link href="/crm/leads" className="block">
+            <MetricCard title="Fresh Leads" value="7" icon={<User className="w-5 h-5 text-blue-500" />} iconBg="bg-blue-100" />
+          </Link>
+          <Link href="/crm/leads" className="block">
+            <MetricCard title="Returning" value="1" icon={<RefreshCcw className="w-5 h-5 text-red-400" />} iconBg="bg-red-100" />
+          </Link>
+          <Link href="/tasks?tab=tasks" className="block">
+            <MetricCard title="Tasks" value="34" icon={<ClipboardList className="w-5 h-5 text-yellow-500" />} iconBg="bg-yellow-100" />
+          </Link>
+          <Link href="/tasks?tab=site-visit" className="block">
+            <MetricCard title="Site Visits" value="0" icon={<Home className="w-5 h-5 text-green-500" />} iconBg="bg-green-100" />
+          </Link>
         </div>
       </section>
 
@@ -71,21 +92,45 @@ export default function DashboardPage() {
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-y-4 gap-x-8">
-            <ActivityItem title="Tasks" value="26" icon={<ClipboardList className="w-4 h-4 text-yellow-500" />} iconBg="bg-yellow-100" />
-            <ActivityItem title="Total Offline Calls" value="0" icon={<Phone className="w-4 h-4 text-blue-500" />} iconBg="bg-blue-100" />
-            <ActivityItem title="Total IVR Calls" value="0" icon={<PhoneCall className="w-4 h-4 text-indigo-500" />} iconBg="bg-indigo-100" />
+            <Link href="/crm/activities" className="block">
+              <ActivityItem title="Tasks" value="26" icon={<ClipboardList className="w-4 h-4 text-yellow-500" />} iconBg="bg-yellow-100" />
+            </Link>
+            <Link href="/crm/activities" className="block">
+              <ActivityItem title="Total Offline Calls" value="0" icon={<Phone className="w-4 h-4 text-blue-500" />} iconBg="bg-blue-100" />
+            </Link>
+            <Link href="/crm/activities" className="block">
+              <ActivityItem title="Total IVR Calls" value="0" icon={<PhoneCall className="w-4 h-4 text-indigo-500" />} iconBg="bg-indigo-100" />
+            </Link>
             
-            <ActivityItem title="Meetings" value="0" icon={<Handshake className="w-4 h-4 text-cyan-500" />} iconBg="bg-cyan-100" />
-            <ActivityItem title="Calls To Lead" value="0" icon={<Users className="w-4 h-4 text-purple-500" />} iconBg="bg-purple-100" />
-            <ActivityItem title="Calls To Lead" value="0" icon={<Users className="w-4 h-4 text-purple-500" />} iconBg="bg-purple-100" />
+            <Link href="/crm/activities" className="block">
+              <ActivityItem title="Meetings" value="0" icon={<Handshake className="w-4 h-4 text-cyan-500" />} iconBg="bg-cyan-100" />
+            </Link>
+            <Link href="/crm/activities" className="block">
+              <ActivityItem title="Calls To Lead" value="0" icon={<Users className="w-4 h-4 text-purple-500" />} iconBg="bg-purple-100" />
+            </Link>
+            <Link href="/crm/activities" className="block">
+              <ActivityItem title="Calls To Lead" value="0" icon={<Users className="w-4 h-4 text-purple-500" />} iconBg="bg-purple-100" />
+            </Link>
             
-            <ActivityItem title="Site Visit Scheduled" value="0" icon={<Home className="w-4 h-4 text-green-500" />} iconBg="bg-green-100" />
-            <ActivityItem title="Calls To Contact" value="0" icon={<User className="w-4 h-4 text-blue-500" />} iconBg="bg-blue-100" />
-            <ActivityItem title="Calls To Contact" value="0" icon={<User className="w-4 h-4 text-blue-500" />} iconBg="bg-blue-100" />
+            <Link href="/crm/activities" className="block">
+              <ActivityItem title="Site Visit Scheduled" value="0" icon={<Home className="w-4 h-4 text-green-500" />} iconBg="bg-green-100" />
+            </Link>
+            <Link href="/crm/activities" className="block">
+              <ActivityItem title="Calls To Contact" value="0" icon={<User className="w-4 h-4 text-blue-500" />} iconBg="bg-blue-100" />
+            </Link>
+            <Link href="/crm/activities" className="block">
+              <ActivityItem title="Calls To Contact" value="0" icon={<User className="w-4 h-4 text-blue-500" />} iconBg="bg-blue-100" />
+            </Link>
             
-            <ActivityItem title="Site Visit Completed" value="0" icon={<Home className="w-4 h-4 text-green-500" />} iconBg="bg-green-100" />
-            <ActivityItem title="Calls To Channel Partner" value="0" icon={<MoreVertical className="w-4 h-4 text-gray-500" />} iconBg="bg-gray-100" />
-            <ActivityItem title="Calls To Channel Partner" value="0" icon={<MoreVertical className="w-4 h-4 text-gray-500" />} iconBg="bg-gray-100" />
+            <Link href="/crm/activities" className="block">
+              <ActivityItem title="Site Visit Completed" value="0" icon={<Home className="w-4 h-4 text-green-500" />} iconBg="bg-green-100" />
+            </Link>
+            <Link href="/crm/activities" className="block">
+              <ActivityItem title="Calls To Channel Partner" value="0" icon={<MoreVertical className="w-4 h-4 text-gray-500" />} iconBg="bg-gray-100" />
+            </Link>
+            <Link href="/crm/activities" className="block">
+              <ActivityItem title="Calls To Channel Partner" value="0" icon={<MoreVertical className="w-4 h-4 text-gray-500" />} iconBg="bg-gray-100" />
+            </Link>
           </div>
         </div>
       </section>

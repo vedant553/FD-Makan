@@ -15,6 +15,9 @@ const config: Config = {
         muted: "hsl(var(--muted))",
         "muted-foreground": "hsl(var(--muted-foreground))",
         border: "hsl(var(--border))",
+        accent: "hsl(var(--accent))",
+        "accent-foreground": "hsl(var(--accent-foreground))",
+        "crm-canvas": "hsl(var(--crm-canvas))",
       },
       borderRadius: {
         lg: "0.75rem",

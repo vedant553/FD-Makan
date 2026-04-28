@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Menu, Megaphone, Bell, ChevronDown, X, LogOut, User } from "lucide-react";
+import { Menu, Megaphone, Bell, ChevronDown, X, LogOut, User, Mail, Phone, Globe, Pencil, UserCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { signOut } from "next-auth/react";
 
@@ -13,6 +13,15 @@ export function Navbar({ isCollapsed, setIsCollapsed, user }: NavbarProps) {
   const [isUpdatesOpen, setIsUpdatesOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isMyProfileOpen, setIsMyProfileOpen] = useState(false);
+  const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
+  const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
+  const [profileForm, setProfileForm] = useState({
+    name: user.name || "Aman Dubey",
+    phone: "9987401146",
+    email: user.email || "aman.fdmps@gmail.com",
+    username: "fdmaman",
+  });
   const profileRef = useRef<HTMLDivElement>(null);
 
   // Close profile dropdown when clicking outside
@@ -28,7 +37,7 @@ export function Navbar({ isCollapsed, setIsCollapsed, user }: NavbarProps) {
 
   return (
     <>
-      <header className="flex h-16 items-center justify-between bg-white px-4 md:px-6 border-b shrink-0 relative z-40">
+      <header className="relative z-40 flex h-16 shrink-0 items-center justify-between border-b border-border bg-card px-4 md:px-6">
         <div className="flex items-center">
           <Button 
             variant="outline" 
@@ -92,7 +101,10 @@ export function Navbar({ isCollapsed, setIsCollapsed, user }: NavbarProps) {
               <div className="absolute right-0 top-full mt-2 w-48 bg-white border border-gray-200 rounded-md shadow-lg py-1 z-50">
                 <button suppressHydrationWarning 
                   className="flex items-center w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                  onClick={() => setIsProfileOpen(false)}
+                  onClick={() => {
+                    setIsProfileOpen(false);
+                    setIsMyProfileOpen(true);
+                  }}
                 >
                   <User className="mr-2 h-4 w-4" /> My Profile
                 </button>
@@ -187,6 +199,182 @@ export function Navbar({ isCollapsed, setIsCollapsed, user }: NavbarProps) {
             </div>
             <div className="p-4 border-t bg-white flex justify-center">
               <Button variant="outline" className="w-full text-blue-600 border-blue-600 hover:bg-blue-50">View All</Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* My Profile Panel */}
+      {isMyProfileOpen && (
+        <div className="fixed inset-0 z-[70] overflow-y-auto bg-[#e6e8eb]">
+          <div className="h-[230px] w-full bg-[url('https://images.unsplash.com/photo-1514565131-fce0801e5785?q=80&w=1920&auto=format&fit=crop')] bg-cover bg-center" />
+          <div className="mx-auto -mt-6 max-w-[1220px] px-3 pb-8">
+            <div className="mb-3 flex justify-end">
+              <button
+                suppressHydrationWarning
+                type="button"
+                onClick={() => setIsMyProfileOpen(false)}
+                className="rounded bg-[#ff5a1f] px-2 py-1 text-xs font-medium text-white hover:bg-[#ea4c14]"
+              >
+                Close
+              </button>
+            </div>
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-[290px_1fr]">
+              <div className="rounded border border-gray-200 bg-white p-6 shadow-sm">
+                <div className="flex flex-col items-center text-center">
+                  <div className="mb-4 flex h-28 w-28 items-center justify-center rounded-full bg-gray-200 text-gray-500">
+                    <UserCircle2 className="h-20 w-20" />
+                  </div>
+                  <h2 className="text-[34px] font-medium text-gray-700">{profileForm.name}</h2>
+                  <p className="mb-4 text-[13px] text-gray-500">{profileForm.email}</p>
+                  <button
+                    suppressHydrationWarning
+                    type="button"
+                    onClick={() => setIsChangePasswordOpen(true)}
+                    className="rounded bg-[#1565d8] px-5 py-2 text-sm font-medium text-white hover:bg-[#1258be]"
+                  >
+                    Change Password
+                  </button>
+                </div>
+              </div>
+
+              <div className="rounded border border-gray-200 bg-white shadow-sm">
+                <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3">
+                  <h3 className="text-[36px] font-medium text-[#2a4a77]">User Info</h3>
+                  <button
+                    suppressHydrationWarning
+                    type="button"
+                    onClick={() => setIsEditProfileOpen(true)}
+                    className="inline-flex items-center gap-1 rounded bg-[#1cc7a1] px-3 py-1.5 text-xs font-medium text-white hover:bg-[#19b291]"
+                  >
+                    <Pencil className="h-3 w-3" />
+                    Edit
+                  </button>
+                </div>
+                <div className="p-5">
+                  <div className="grid grid-cols-[160px_20px_1fr] gap-y-4 text-[15px] text-gray-700">
+                    <div className="flex items-center gap-2 font-semibold"><User className="h-4 w-4" /> Name</div>
+                    <div>:</div>
+                    <div>{profileForm.name}</div>
+                    <div className="flex items-center gap-2 font-semibold"><Phone className="h-4 w-4" /> Phone</div>
+                    <div>:</div>
+                    <div>{profileForm.phone}</div>
+                    <div className="flex items-center gap-2 font-semibold"><Mail className="h-4 w-4" /> Email</div>
+                    <div>:</div>
+                    <div>{profileForm.email}</div>
+                    <div className="flex items-center gap-2 font-semibold"><Globe className="h-4 w-4" /> Username</div>
+                    <div>:</div>
+                    <div>{profileForm.username}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit User Info Modal */}
+      {isEditProfileOpen && (
+        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/30 p-4">
+          <div className="w-full max-w-[920px] rounded border border-gray-300 bg-white shadow-2xl">
+            <div className="border-b border-gray-200 px-8 py-6">
+              <h3 className="text-[42px] font-medium text-[#2a4a77]">User Info</h3>
+            </div>
+            <div className="grid gap-4 px-8 py-8 md:grid-cols-[170px_1fr]">
+              <label className="flex items-center gap-2 text-[36px] font-semibold text-gray-700"><User className="h-5 w-5" /> Name</label>
+              <input
+                suppressHydrationWarning
+                value={profileForm.name}
+                onChange={(e) => setProfileForm((p) => ({ ...p, name: e.target.value }))}
+                className="h-14 rounded border border-gray-300 px-3 text-[34px] text-gray-700 outline-none focus:border-[#1565d8]"
+              />
+              <label className="flex items-center gap-2 text-[36px] font-semibold text-gray-700"><Phone className="h-5 w-5" /> Phone</label>
+              <input
+                suppressHydrationWarning
+                value={profileForm.phone}
+                onChange={(e) => setProfileForm((p) => ({ ...p, phone: e.target.value }))}
+                className="h-14 rounded border border-gray-300 px-3 text-[34px] text-gray-700 outline-none focus:border-[#1565d8]"
+              />
+              <label className="flex items-center gap-2 text-[36px] font-semibold text-gray-700"><Mail className="h-5 w-5" /> Email</label>
+              <input
+                suppressHydrationWarning
+                value={profileForm.email}
+                onChange={(e) => setProfileForm((p) => ({ ...p, email: e.target.value }))}
+                className="h-14 rounded border border-gray-300 px-3 text-[34px] text-gray-700 outline-none focus:border-[#1565d8]"
+              />
+              <label className="flex items-center gap-2 text-[36px] font-semibold text-gray-700"><Globe className="h-5 w-5" /> Username</label>
+              <input
+                suppressHydrationWarning
+                value={profileForm.username}
+                onChange={(e) => setProfileForm((p) => ({ ...p, username: e.target.value }))}
+                className="h-14 rounded border border-gray-300 px-3 text-[34px] text-gray-700 outline-none focus:border-[#1565d8]"
+              />
+            </div>
+            <div className="flex justify-end gap-4 px-8 pb-8">
+              <button
+                suppressHydrationWarning
+                type="button"
+                onClick={() => setIsEditProfileOpen(false)}
+                className="rounded bg-[#1565d8] px-10 py-3 text-[32px] font-medium text-white hover:bg-[#1258be]"
+              >
+                Submit
+              </button>
+              <button
+                suppressHydrationWarning
+                type="button"
+                onClick={() => setIsEditProfileOpen(false)}
+                className="px-2 py-3 text-[32px] text-[#2d3b57] hover:underline"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Change Password Modal */}
+      {isChangePasswordOpen && (
+        <div className="fixed inset-0 z-[85] flex items-center justify-center bg-black/45 p-4">
+          <div className="w-full max-w-[700px] rounded border border-gray-300 bg-white shadow-2xl">
+            <div className="flex items-center justify-between px-6 py-5">
+              <h3 className="text-[44px] font-medium text-[#3f4a63]">Change Password</h3>
+              <button
+                suppressHydrationWarning
+                type="button"
+                onClick={() => setIsChangePasswordOpen(false)}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+            <div className="border-t border-gray-200 px-6 py-6">
+              <div className="space-y-5">
+                <div>
+                  <label className="mb-2 block text-[34px] font-semibold text-gray-700">Old Password</label>
+                  <input suppressHydrationWarning type="password" placeholder="Old Password" className="h-14 w-full rounded border border-gray-300 px-4 text-[33px] outline-none focus:border-[#1565d8]" />
+                </div>
+                <div>
+                  <label className="mb-2 block text-[34px] font-semibold text-gray-700">New Password</label>
+                  <input suppressHydrationWarning type="password" placeholder="Password" className="h-14 w-full rounded border border-gray-300 px-4 text-[33px] outline-none focus:border-[#1565d8]" />
+                </div>
+                <div>
+                  <label className="mb-2 block text-[34px] font-semibold text-gray-700">Confirm New Password</label>
+                  <input suppressHydrationWarning type="password" placeholder="Confirm Password" className="h-14 w-full rounded border border-gray-300 px-4 text-[33px] outline-none focus:border-[#1565d8]" />
+                </div>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 border-t border-gray-200 px-6 py-5">
+              <button suppressHydrationWarning type="button" className="rounded bg-[#1565d8] px-6 py-2 text-[32px] font-medium text-white hover:bg-[#1258be]">
+                Change Password
+              </button>
+              <button
+                suppressHydrationWarning
+                type="button"
+                onClick={() => setIsChangePasswordOpen(false)}
+                className="rounded bg-[#dbe3ea] px-6 py-2 text-[32px] text-gray-700 hover:bg-[#ccd6de]"
+              >
+                Cancel
+              </button>
             </div>
           </div>
         </div>

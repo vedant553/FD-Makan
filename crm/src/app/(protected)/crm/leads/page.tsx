@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowLeftRight,
   ArrowUpDown,
@@ -19,6 +20,7 @@ import {
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { useLeads, useUsers } from "@/hooks/use-leads";
 
 import { DetailedLeadDrawer } from "./detailed-lead-drawer";
 import { BulkUploadModal } from "./bulk-upload-modal";
@@ -58,7 +60,6 @@ const ADVANCED_FILTER_OPTIONS = [
   "Over Due Leads",
 ] as const;
 
-const MOCK_AGENTS = ["Aman Dubey", "Ajay Jaiswal", "Sakshi Pagare", "Priya Jagtap"];
 const MOCK_PROJECTS = ["Balaji Symphony", "Silver Heights", "Prime Towers", "Nerul Generic"];
 
 const LEADS_MORE_ACTIONS: { id: string; label: string; icon: LucideIcon }[] = [
@@ -169,6 +170,25 @@ const LEAD_ROWS = [
     ethnicity: "-",
   },
 ];
+
+type LeadApiRow = {
+  id: string;
+  createdAt: string;
+  name: string;
+  phone: string;
+  email?: string | null;
+  source: string;
+  status: "NEW" | "CONTACTED" | "QUALIFIED" | "CLOSED";
+  assignedTo?: { id: string; name: string; email: string } | null;
+  campaign?: { id: string; name: string; source: string } | null;
+};
+
+type UserApiRow = {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+};
 
 function Donut({ total, segments }: { total: number; segments: { ringPct: number; color: string }[] }) {
   let acc = 0;
@@ -360,7 +380,23 @@ function LeadQualityPicker({ value, onChange }: { value: string; onChange: (v: s
   );
 }
 
-function QuickLeadModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+function QuickLeadModal({
+  open,
+  onClose,
+  agentOptions,
+  projectOptions,
+  onSubmit,
+  isSubmitting,
+  submitError,
+}: {
+  open: boolean;
+  onClose: () => void;
+  agentOptions: { label: string; value: string }[];
+  projectOptions: string[];
+  onSubmit: (payload: { name: string; phone: string; source: string; assignedToId?: string }) => void;
+  isSubmitting: boolean;
+  submitError?: string;
+}) {
   const [customerName, setCustomerName] = useState("");
   const [phone, setPhone] = useState("");
   const [altMobile, setAltMobile] = useState("");
@@ -442,19 +478,21 @@ function QuickLeadModal({ open, onClose }: { open: boolean; onClose: () => void 
               value={project}
               onChange={setProject}
               placeholder="Search & Select Project"
-              options={MOCK_PROJECTS}
+              options={projectOptions}
             />
             <QlSelectField
               label="Assigned to"
               value={assignedTo}
               onChange={setAssignedTo}
               placeholder="Select Sales Agent"
-              options={MOCK_AGENTS}
+              options={agentOptions.map((a) => a.label)}
             />
           </div>
         </div>
 
-        <div className="flex justify-end gap-2 border-t border-gray-200 bg-white px-5 py-4">
+        <div className="border-t border-gray-200 bg-white px-5 py-4">
+          {submitError ? <p className="mb-2 text-sm text-red-600">{submitError}</p> : null}
+          <div className="flex justify-end gap-2">
           <button suppressHydrationWarning
             type="button"
             onClick={onClose}
@@ -464,11 +502,22 @@ function QuickLeadModal({ open, onClose }: { open: boolean; onClose: () => void 
           </button>
           <button suppressHydrationWarning
             type="button"
-            onClick={onClose}
+            onClick={() => {
+              if (!customerName.trim() || !phone.trim() || !source.trim()) return;
+              const assigned = agentOptions.find((a) => a.label === assignedTo);
+              onSubmit({
+                name: customerName.trim(),
+                phone: phone.trim(),
+                source: source.trim(),
+                assignedToId: assigned?.value,
+              });
+            }}
+            disabled={isSubmitting}
             className={`rounded px-5 py-2 text-sm font-medium text-white transition-colors ${PRIMARY}`}
           >
-            Submit
+            {isSubmitting ? "Saving..." : "Submit"}
           </button>
+          </div>
         </div>
       </div>
     </div>
@@ -484,8 +533,62 @@ export default function CrmLeadsPage() {
   const [bulkUploadOpen, setBulkUploadOpen] = useState(false);
   const [exportLeadsOpen, setExportLeadsOpen] = useState(false);
   const [leadStageAnalysisVisible, setLeadStageAnalysisVisible] = useState(true);
+  const queryClient = useQueryClient();
+  const leadsQuery = useLeads();
+  const usersQuery = useUsers();
   const addMenuRef = useRef<HTMLDivElement>(null);
   const leadMoreRef = useRef<HTMLDivElement>(null);
+
+  const createLeadMutation = useMutation({
+    mutationFn: async (payload: { name: string; phone: string; source: string; assignedToId?: string }) => {
+      const res = await fetch("/api/leads", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ message: "Failed to create lead" }));
+        throw new Error(err?.message || "Failed to create lead");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["leads"] });
+      setQuickLeadOpen(false);
+    },
+  });
+
+  const agentOptions = ((usersQuery.data?.users as UserApiRow[] | undefined) ?? []).map((u) => ({
+    label: u.name,
+    value: u.id,
+  }));
+
+  const dbLeads = ((leadsQuery.data?.leads as LeadApiRow[] | undefined) ?? []).map((lead) => ({
+    id: lead.id.slice(-6),
+    date: new Date(lead.createdAt).toLocaleString(),
+    assignedDate: new Date(lead.createdAt).toLocaleString(),
+    status: [lead.status === "NEW" ? "New" : lead.status],
+    name: lead.name,
+    phone: lead.phone,
+    stage: lead.status === "NEW" ? "New Lead" : lead.status.replace("_", " "),
+    reason: "-",
+    source: lead.source,
+    project: lead.campaign?.name ?? "-",
+    tags: lead.campaign?.source ?? "-",
+    preSales: "-",
+    sales: lead.assignedTo?.name ?? "-",
+    channel: "-",
+    sourcing: "-",
+    requirement: "-",
+    location: "-",
+    budget: "-",
+    remark: lead.email ?? "-",
+    siteVisit: "-",
+    lastActivity: new Date(lead.createdAt).toLocaleDateString(),
+    ethnicity: "-",
+  }));
+
+  const visibleLeadRows = dbLeads.length > 0 ? dbLeads : LEAD_ROWS;
 
   useEffect(() => {
     if (!addMenuOpen) return;
@@ -564,7 +667,7 @@ export default function CrmLeadsPage() {
 
         <section className="overflow-hidden rounded-md border border-gray-100 bg-white shadow-sm">
           <div className="flex flex-wrap items-center justify-between gap-4 border-b border-gray-100 p-4">
-            <h3 className="text-lg font-semibold text-gray-700">Leads ( 5589 )</h3>
+            <h3 className="text-lg font-semibold text-gray-700">Leads ( {visibleLeadRows.length} )</h3>
             <div className="flex flex-wrap items-center gap-2">
               <div className="relative min-w-[200px] max-w-[260px]">
                 <select suppressHydrationWarning
@@ -759,7 +862,7 @@ export default function CrmLeadsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {LEAD_ROWS.map((row, idx) => (
+                {visibleLeadRows.map((row, idx) => (
                   <tr key={row.id} className="hover:bg-gray-50">
                     <td className="border-r border-gray-100 px-4 py-3">
                       <input suppressHydrationWarning type="checkbox" className="rounded border-gray-300" />
@@ -812,7 +915,15 @@ export default function CrmLeadsPage() {
         </section>
       </div>
     </div>
-    <QuickLeadModal open={quickLeadOpen} onClose={() => setQuickLeadOpen(false)} />
+    <QuickLeadModal
+      open={quickLeadOpen}
+      onClose={() => setQuickLeadOpen(false)}
+      agentOptions={agentOptions}
+      projectOptions={MOCK_PROJECTS}
+      isSubmitting={createLeadMutation.isPending}
+      submitError={createLeadMutation.error instanceof Error ? createLeadMutation.error.message : undefined}
+      onSubmit={(payload) => createLeadMutation.mutate(payload)}
+    />
     <DetailedLeadDrawer open={detailedLeadOpen} onClose={() => setDetailedLeadOpen(false)} />
     <TransferLeadsModal open={transferLeadsOpen} onClose={() => setTransferLeadsOpen(false)} />
     <BulkUploadModal open={bulkUploadOpen} onClose={() => setBulkUploadOpen(false)} />
