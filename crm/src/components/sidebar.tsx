@@ -40,6 +40,7 @@ const MANAGE_SUBMENU = [
   { label: "Company Info", href: "/manage/company-info" },
   { label: "Subscriptions", href: "/manage/subscriptions" },
   { label: "Users & Teams", href: "/manage/users-teams" },
+  { label: "Permissions", href: "/manage/permissions" },
   { label: "Settings", href: "/manage/settings" },
   { label: "API-Doc", href: "/manage/api-doc" },
 ] as const;

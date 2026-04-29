@@ -4,6 +4,8 @@ import { useMemo, useState } from "react";
 import { Pencil, Plus, Trash2, X } from "lucide-react";
 
 import { PageShell, Panel } from "@/components/crm/page-shell";
+import { SettingsPermissionTab } from "./permission-tab";
+import { SettingsTemplatesTab } from "./templates-tab";
 
 const settingTabs = ["Masters", "Communication", "Permission", "Templates"] as const;
 const masterItems = [
@@ -28,6 +30,20 @@ const masterItems = [
 ] as const;
 
 type Master = (typeof masterItems)[number];
+
+const commChannels = ["Email", "SMS", "WhatsApp", "IVR"] as const;
+type CommChannel = (typeof commChannels)[number];
+
+const ivrProviders: { id: string; name: string }[] = [
+  { id: "mcube", name: "MCube" },
+  { id: "knowlarity", name: "Knowlarity" },
+  { id: "airson", name: "Airson" },
+  { id: "exotel", name: "Exotel" },
+  { id: "vanni", name: "Vanni" },
+  { id: "airphone", name: "Airphone" },
+  { id: "myoperator", name: "My Operator" },
+  { id: "voxpro", name: "VoxPro" },
+];
 
 type BudgetRow = { name: string; amount: number };
 type CpCompanyRow = { name: string; order: string };
@@ -126,6 +142,31 @@ const INITIAL_SUB_TYPES = [
 export default function ManageSettingsPage() {
   const [activeTab, setActiveTab] = useState<(typeof settingTabs)[number]>("Masters");
   const [activeMaster, setActiveMaster] = useState<Master>("Amenities");
+  const [commChannel, setCommChannel] = useState<CommChannel>("Email");
+  const [emailPref, setEmailPref] = useState({ name: "FD Makan", emailFrom: "aman.fdmps@gmail.com", replyTo: "aman.fdmps@gmail.com" });
+  const [sendGridOn, setSendGridOn] = useState(false);
+  const [smtpOn, setSmtpOn] = useState(false);
+  const [textlocalOn, setTextlocalOn] = useState(false);
+  const [watiOn, setWatiOn] = useState(false);
+  const [watiConfigureOpen, setWatiConfigureOpen] = useState(false);
+  const [watiConfig, setWatiConfig] = useState({ accessToken: "", apiEndpoint: "" });
+  const [ivrEnabled, setIvrEnabled] = useState<Record<string, boolean>>(() =>
+    Object.fromEntries(ivrProviders.map((p) => [p.id, false])),
+  );
+
+  const [emailProviderModal, setEmailProviderModal] = useState<null | "sendgrid" | "smtp" | "sms-textlocal">(null);
+  const [smtpModalTab, setSmtpModalTab] = useState<"standard" | "userwise">("standard");
+  const [sendGridApiKey, setSendGridApiKey] = useState("");
+  const [textlocalApiKey, setTextlocalApiKey] = useState("");
+  const [smtpBasic, setSmtpBasic] = useState({ host: "", port: "", userName: "", password: "" });
+  const [smtpUserWise, setSmtpUserWise] = useState({
+    salesAgentWise: false,
+    accountType: "",
+    hostUrl: "smtp.domain.com",
+    hostPort: "0",
+    email: "",
+    password: "",
+  });
 
   const [amenities, setAmenities] = useState<string[]>(["Garden", "Swimming Pool"]);
   const [areaRange, setAreaRange] = useState<string[]>(INITIAL_AREA);
@@ -993,11 +1034,232 @@ export default function ManageSettingsPage() {
                 </div>
               </div>
             </div>
+          ) : activeTab === "Communication" ? (
+            <div className="space-y-3">
+              <div className="rounded border border-gray-200 bg-[#f5f6f8] px-3 py-2 text-sm font-semibold text-[#3f4658]">Company</div>
+              <div className="grid grid-cols-1 gap-3 lg:grid-cols-[200px_1fr]">
+                <div className="rounded border border-gray-200 bg-white">
+                  <div className="max-h-[640px] overflow-y-auto p-2">
+                    {commChannels.map((ch) => (
+                      <button key={ch} suppressHydrationWarning type="button" onClick={() => setCommChannel(ch)} className={`mb-1 block w-full rounded px-3 py-2 text-left text-xs font-medium ${commChannel === ch ? "bg-[#1a56db] text-white" : "text-[#2f4f76] hover:bg-gray-100"}`}>
+                        {ch}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="min-w-0 space-y-4">
+                  {commChannel === "Email" ? (
+                    <>
+                      <div className="rounded border border-gray-200 bg-white p-4">
+                        <h3 className="mb-4 text-sm font-semibold text-[#3f4658]">Send Email Preference</h3>
+                        <div className="space-y-3 text-xs">
+                          <label className="block">
+                            <span className="mb-1 block text-[11px] font-medium text-gray-600">Name</span>
+                            <input value={emailPref.name} onChange={(e) => setEmailPref((p) => ({ ...p, name: e.target.value }))} className="w-full rounded border border-gray-300 px-2 py-2 text-[#3f4658] outline-none focus:border-[#1a56db]" />
+                          </label>
+                          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                            <label className="block">
+                              <span className="mb-1 block text-[11px] font-medium text-gray-600">Email From</span>
+                              <input value={emailPref.emailFrom} onChange={(e) => setEmailPref((p) => ({ ...p, emailFrom: e.target.value }))} className="w-full rounded border border-gray-300 px-2 py-2 text-[#3f4658] outline-none focus:border-[#1a56db]" />
+                            </label>
+                            <label className="block">
+                              <span className="mb-1 block text-[11px] font-medium text-gray-600">Reply To</span>
+                              <input value={emailPref.replyTo} onChange={(e) => setEmailPref((p) => ({ ...p, replyTo: e.target.value }))} className="w-full rounded border border-gray-300 px-2 py-2 text-[#3f4658] outline-none focus:border-[#1a56db]" />
+                            </label>
+                          </div>
+                          <div className="flex justify-end pt-1">
+                            <button suppressHydrationWarning type="button" className="rounded bg-[#1a56db] px-4 py-2 text-xs font-medium text-white hover:bg-blue-700">
+                              Submit
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                        <div className="rounded border border-gray-200 bg-white p-3">
+                          <div className="flex items-start justify-between gap-2 border-b border-gray-100 pb-3">
+                            <div className="flex items-center gap-2">
+                              <span className="inline-flex h-9 items-center rounded bg-gray-100 px-2 text-[10px] font-bold tracking-tight text-[#1a73e8]">SendGrid</span>
+                              <span className="text-[11px] text-gray-500">Twilio SendGrid</span>
+                            </div>
+                            <button suppressHydrationWarning type="button" role="switch" aria-checked={sendGridOn} onClick={() => setSendGridOn((v) => !v)} className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${sendGridOn ? "bg-[#1a56db]" : "bg-gray-300"}`}>
+                              <span className={`absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${sendGridOn ? "translate-x-5" : ""}`} />
+                            </button>
+                          </div>
+                          <div className="border-b border-gray-100 py-3 text-sm text-[#3f4658]">SendGrid</div>
+                          <div className="flex justify-end pt-3">
+                            <button suppressHydrationWarning type="button" onClick={() => setEmailProviderModal("sendgrid")} className="rounded bg-[#1a56db] px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700">
+                              Configure
+                            </button>
+                          </div>
+                        </div>
+                        <div className="rounded border border-gray-200 bg-white p-3">
+                          <div className="flex items-start justify-between gap-2 border-b border-gray-100 pb-3">
+                            <div className="flex items-center gap-2">
+                              <span className="inline-flex h-9 w-9 items-center justify-center rounded bg-red-50 text-lg text-red-600">✉</span>
+                              <span className="text-[11px] text-gray-500">SMTP</span>
+                            </div>
+                            <button suppressHydrationWarning type="button" role="switch" aria-checked={smtpOn} onClick={() => setSmtpOn((v) => !v)} className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${smtpOn ? "bg-[#1a56db]" : "bg-gray-300"}`}>
+                              <span className={`absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${smtpOn ? "translate-x-5" : ""}`} />
+                            </button>
+                          </div>
+                          <div className="border-b border-gray-100 py-3 text-sm text-[#3f4658]">
+                            SMTP <span className="align-top text-[10px] font-medium text-red-500">Beta Version</span>
+                          </div>
+                          <div className="flex justify-end pt-3">
+                            <button suppressHydrationWarning type="button" onClick={() => { setSmtpModalTab("standard"); setEmailProviderModal("smtp"); }} className="rounded bg-[#1a56db] px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700">
+                              Configure
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </>
+                  ) : null}
+
+                  {commChannel === "SMS" ? (
+                    <div className="space-y-4">
+                      <h3 className="text-sm font-semibold text-[#3f4658]">Buy Credits and Send SMS Notification</h3>
+                      <div className="rounded border border-gray-200 bg-white p-4">
+                        <div className="mb-3 flex items-center gap-2">
+                          <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-[#1a56db] text-sm font-bold text-white">B</span>
+                          <span className="text-sm font-semibold text-[#1a56db]">Buildesk</span>
+                        </div>
+                        <div className="border-t border-gray-100 pt-3 text-xs leading-relaxed text-[#4a5165]">
+                          I&apos;d like to send SMS with Buildesk branding enabling this option will add the &quot;Buildesk&quot; label to all the SMS notifications you send to your customers.
+                        </div>
+                        <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-gray-100 pt-3 text-xs">
+                          <span className="text-gray-500">You have 0 credits available from BuildDesk.</span>
+                          <button suppressHydrationWarning type="button" className="rounded bg-[#1a56db] px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700">
+                            Buy Credits
+                          </button>
+                        </div>
+                      </div>
+
+                      <h3 className="text-sm font-semibold text-[#3f4658]">External SMS Providers</h3>
+                      <div className="rounded border border-gray-200 bg-white p-4">
+                        <div className="flex items-start justify-between gap-2 border-b border-gray-100 pb-3">
+                          <div className="flex items-center gap-2">
+                            <span className="inline-flex h-9 items-center rounded-lg bg-[#1a56db] px-2 text-[10px] font-semibold leading-tight text-white">
+                              text
+                              <br />
+                              local
+                            </span>
+                            <span className="text-[11px] text-gray-500">textlocal</span>
+                          </div>
+                          <button suppressHydrationWarning type="button" role="switch" aria-checked={textlocalOn} onClick={() => setTextlocalOn((v) => !v)} className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${textlocalOn ? "bg-[#1a56db]" : "bg-gray-300"}`}>
+                            <span className={`absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${textlocalOn ? "translate-x-5" : ""}`} />
+                          </button>
+                        </div>
+                        <div className="border-t border-gray-100 pt-3 text-xs leading-relaxed text-[#4a5165]">
+                          Buildesk is an external SMS provider that can enable you to receive and send message to your customers.
+                        </div>
+                        <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-gray-100 pt-3 text-xs">
+                          <span className="text-gray-500">You have 0 credits available.</span>
+                          <button suppressHydrationWarning type="button" onClick={() => setEmailProviderModal("sms-textlocal")} className="rounded bg-[#1a56db] px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700">
+                            Configure
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="rounded border border-gray-200 bg-white p-4 text-xs leading-relaxed">
+                        <p className="mb-2 font-semibold text-[#3f4658]">Update DLT registration details to continue sending SMS</p>
+                        <p className="text-[#4a5165]">
+                          In compliance with the revised Telecom Regulatory Authority of India (TRAI) regulations, you will have to register with a DLT operator to send SMS to your customers.
+                        </p>
+                      </div>
+                    </div>
+                  ) : null}
+
+                  {commChannel === "WhatsApp" ? (
+                    <div className="space-y-3">
+                      <h3 className="text-sm font-semibold leading-snug text-[#3f4658]">Integrate WhatsApp Business API, Send Messages &amp; Notification from Buildesk</h3>
+                      <div className="rounded border border-gray-200 bg-white p-4">
+                        <div className="flex items-start justify-between gap-2 border-b border-gray-100 pb-3">
+                          <div className="flex items-center gap-2">
+                            <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-emerald-600 text-sm font-bold text-white">W</span>
+                            <span className="text-sm font-semibold text-[#1a56db]">WATI</span>
+                          </div>
+                          <button suppressHydrationWarning type="button" role="switch" aria-checked={watiOn} onClick={() => setWatiOn((v) => !v)} className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${watiOn ? "bg-[#1a56db]" : "bg-gray-300"}`}>
+                            <span className={`absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${watiOn ? "translate-x-5" : ""}`} />
+                          </button>
+                        </div>
+                        <div className="border-t border-gray-100 py-3 text-xs leading-relaxed text-[#4a5165]">Whatsapp Business API, Send automated notification, broadcast messages to your leads, contact &amp; customer.</div>
+                        <div className="flex justify-end border-t border-gray-100 pt-3">
+                          <button suppressHydrationWarning type="button" onClick={() => setWatiConfigureOpen(true)} className="rounded bg-[#1a56db] px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700">
+                            Configure
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ) : null}
+
+                  {commChannel === "IVR" ? (
+                    <div className="max-h-[720px] space-y-3 overflow-y-auto pr-1">
+                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                        {ivrProviders.map((p) => (
+                          <div key={p.id} className="rounded border border-gray-200 bg-white p-3">
+                            <div className="flex items-start justify-between gap-2 border-b border-gray-100 pb-3">
+                              <span className="inline-flex h-10 min-w-[4rem] items-center justify-center rounded bg-gray-50 px-2 text-[11px] font-bold text-[#2f4f76]">{p.name}</span>
+                              <button suppressHydrationWarning type="button" role="switch" aria-checked={ivrEnabled[p.id] === true} onClick={() => setIvrEnabled((prev) => ({ ...prev, [p.id]: !prev[p.id] }))} className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${ivrEnabled[p.id] ? "bg-[#1a56db]" : "bg-gray-300"}`}>
+                                <span className={`absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${ivrEnabled[p.id] ? "translate-x-5" : ""}`} />
+                              </button>
+                            </div>
+                            <div className="border-b border-gray-100 py-3 text-sm text-[#3f4658]">{p.name}</div>
+                            <div className="flex justify-end pt-3">
+                              <button suppressHydrationWarning type="button" className="rounded bg-[#1a56db] px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700">
+                                Configure
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : null}
+                </div>
+              </div>
+            </div>
+          ) : activeTab === "Permission" ? (
+            <SettingsPermissionTab />
+          ) : activeTab === "Templates" ? (
+            <SettingsTemplatesTab />
           ) : (
             <div className="rounded border border-gray-200 bg-white p-6 text-sm text-gray-500">{activeTab} section UI can be added next.</div>
           )}
         </div>
       </Panel>
+
+      {emailProviderModal === "sendgrid" || emailProviderModal === "sms-textlocal" ? (
+        <ApiKeyConfigureModal
+          apiKey={emailProviderModal === "sendgrid" ? sendGridApiKey : textlocalApiKey}
+          onApiKeyChange={emailProviderModal === "sendgrid" ? setSendGridApiKey : setTextlocalApiKey}
+          onClose={() => setEmailProviderModal(null)}
+          onSubmit={() => setEmailProviderModal(null)}
+        />
+      ) : null}
+
+      {emailProviderModal === "smtp" ? (
+        <SmtpConfigureModal
+          tab={smtpModalTab}
+          onTabChange={setSmtpModalTab}
+          basic={smtpBasic}
+          onBasicChange={setSmtpBasic}
+          userWise={smtpUserWise}
+          onUserWiseChange={setSmtpUserWise}
+          onClose={() => setEmailProviderModal(null)}
+          onSubmit={() => setEmailProviderModal(null)}
+        />
+      ) : null}
+
+      {watiConfigureOpen ? (
+        <WhatsAppWatiConfigureModal
+          accessToken={watiConfig.accessToken}
+          apiEndpoint={watiConfig.apiEndpoint}
+          onAccessTokenChange={(v) => setWatiConfig((p) => ({ ...p, accessToken: v }))}
+          onApiEndpointChange={(v) => setWatiConfig((p) => ({ ...p, apiEndpoint: v }))}
+          onClose={() => setWatiConfigureOpen(false)}
+          onSubmit={() => setWatiConfigureOpen(false)}
+        />
+      ) : null}
 
       {singleModal.open && (activeMaster === "Amenities" || activeMaster === "Area Range") ? (
         <SingleFieldModal
@@ -1395,6 +1657,134 @@ function ModalButtons({ onSubmit, onClose, submitLabel = "Submit" }: { onSubmit:
       <button suppressHydrationWarning type="button" onClick={onSubmit} className="rounded bg-[#1a56db] px-5 py-1.5 text-sm font-medium text-white hover:bg-blue-700">{submitLabel}</button>
       <button suppressHydrationWarning type="button" onClick={onClose} className="rounded bg-gray-200 px-5 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-300">Cancel</button>
     </>
+  );
+}
+
+function ApiKeyConfigureModal({ apiKey, onApiKeyChange, onClose, onSubmit }: { apiKey: string; onApiKeyChange: (v: string) => void; onClose: () => void; onSubmit: () => void }) {
+  return (
+    <ModalFrame title="Configure" onClose={onClose} footer={<ModalButtons onSubmit={onSubmit} onClose={onClose} />}>
+      <label className="mb-2 block text-sm font-semibold text-[#243656]">API Key</label>
+      <input suppressHydrationWarning value={apiKey} onChange={(e) => onApiKeyChange(e.target.value)} placeholder="Please Enter API key" className="h-10 w-full rounded border border-gray-300 px-3 text-sm text-[#3f4658] placeholder:text-gray-400 outline-none focus:border-[#1a56db]" />
+    </ModalFrame>
+  );
+}
+
+function WhatsAppWatiConfigureModal({
+  accessToken,
+  apiEndpoint,
+  onAccessTokenChange,
+  onApiEndpointChange,
+  onClose,
+  onSubmit,
+}: {
+  accessToken: string;
+  apiEndpoint: string;
+  onAccessTokenChange: (v: string) => void;
+  onApiEndpointChange: (v: string) => void;
+  onClose: () => void;
+  onSubmit: () => void;
+}) {
+  return (
+    <ModalFrame title="Configure" onClose={onClose} footer={<ModalButtons onSubmit={onSubmit} onClose={onClose} />}>
+      <div className="space-y-4 text-sm">
+        <div>
+          <label className="mb-2 block font-semibold text-[#334155]">Access Token</label>
+          <input suppressHydrationWarning value={accessToken} onChange={(e) => onAccessTokenChange(e.target.value)} placeholder="Please Enter Access Token" className="h-10 w-full rounded border border-gray-300 px-3 text-sm text-[#3f4658] placeholder:text-gray-400 outline-none focus:border-[#1a56db]" />
+        </div>
+        <div>
+          <label className="mb-2 block font-semibold text-[#334155]">API Endpoint</label>
+          <input suppressHydrationWarning value={apiEndpoint} onChange={(e) => onApiEndpointChange(e.target.value)} placeholder="Please Enter API Endpoint" className="h-10 w-full rounded border border-gray-300 px-3 text-sm text-[#3f4658] placeholder:text-gray-400 outline-none focus:border-[#1a56db]" />
+        </div>
+      </div>
+    </ModalFrame>
+  );
+}
+
+function SmtpConfigureModal({
+  tab,
+  onTabChange,
+  basic,
+  onBasicChange,
+  userWise,
+  onUserWiseChange,
+  onClose,
+  onSubmit,
+}: {
+  tab: "standard" | "userwise";
+  onTabChange: (t: "standard" | "userwise") => void;
+  basic: { host: string; port: string; userName: string; password: string };
+  onBasicChange: (p: { host: string; port: string; userName: string; password: string }) => void;
+  userWise: { salesAgentWise: boolean; accountType: string; hostUrl: string; hostPort: string; email: string; password: string };
+  onUserWiseChange: (p: { salesAgentWise: boolean; accountType: string; hostUrl: string; hostPort: string; email: string; password: string }) => void;
+  onClose: () => void;
+  onSubmit: () => void;
+}) {
+  const title = tab === "userwise" ? "Configure UserWise SMTP" : "Configure";
+  return (
+    <ModalFrame title={title} onClose={onClose} footer={<ModalButtons onSubmit={onSubmit} onClose={onClose} />}>
+      <div className="mb-4 flex gap-1 rounded border border-gray-200 bg-gray-50 p-0.5 text-xs">
+        <button suppressHydrationWarning type="button" onClick={() => onTabChange("standard")} className={`flex-1 rounded px-2 py-1.5 font-medium ${tab === "standard" ? "bg-white text-[#1a56db] shadow-sm" : "text-gray-600 hover:text-[#3f4658]"}`}>
+          Standard SMTP
+        </button>
+        <button suppressHydrationWarning type="button" onClick={() => onTabChange("userwise")} className={`flex-1 rounded px-2 py-1.5 font-medium ${tab === "userwise" ? "bg-white text-[#1a56db] shadow-sm" : "text-gray-600 hover:text-[#3f4658]"}`}>
+          User-wise SMTP
+        </button>
+      </div>
+      {tab === "standard" ? (
+        <div className="grid grid-cols-1 gap-4 text-sm sm:grid-cols-2">
+          <div>
+            <label className="mb-2 block font-semibold text-[#243656]">Host</label>
+            <input suppressHydrationWarning value={basic.host} onChange={(e) => onBasicChange({ ...basic, host: e.target.value })} placeholder="Please Enter Host" className="h-10 w-full rounded border border-gray-300 px-3 text-sm text-[#3f4658] placeholder:text-gray-400 outline-none focus:border-[#1a56db]" />
+          </div>
+          <div>
+            <label className="mb-2 block font-semibold text-[#243656]">Port</label>
+            <input suppressHydrationWarning value={basic.port} onChange={(e) => onBasicChange({ ...basic, port: e.target.value })} placeholder="Please Enter Port" className="h-10 w-full rounded border border-gray-300 px-3 text-sm text-[#3f4658] placeholder:text-gray-400 outline-none focus:border-[#1a56db]" />
+          </div>
+          <div>
+            <label className="mb-2 block font-semibold text-[#243656]">User Name</label>
+            <input suppressHydrationWarning value={basic.userName} onChange={(e) => onBasicChange({ ...basic, userName: e.target.value })} placeholder="Please Enter User Name" className="h-10 w-full rounded border border-gray-300 px-3 text-sm text-[#3f4658] placeholder:text-gray-400 outline-none focus:border-[#1a56db]" />
+          </div>
+          <div>
+            <label className="mb-2 block font-semibold text-[#243656]">Password</label>
+            <input suppressHydrationWarning type="password" value={basic.password} onChange={(e) => onBasicChange({ ...basic, password: e.target.value })} placeholder="Please Enter Password" className="h-10 w-full rounded border border-gray-300 px-3 text-sm text-[#3f4658] placeholder:text-gray-400 outline-none focus:border-[#1a56db]" />
+          </div>
+        </div>
+      ) : (
+        <div className="space-y-4 text-sm">
+          <div className="flex items-center justify-between gap-3">
+            <span className="font-semibold text-[#243656]">Sales Agent Wise Configure</span>
+            <button suppressHydrationWarning type="button" role="switch" aria-checked={userWise.salesAgentWise} onClick={() => onUserWiseChange({ ...userWise, salesAgentWise: !userWise.salesAgentWise })} className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${userWise.salesAgentWise ? "bg-[#1a56db]" : "bg-gray-300"}`}>
+              <span className={`absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${userWise.salesAgentWise ? "translate-x-5" : ""}`} />
+            </button>
+          </div>
+          <div>
+            <label className="mb-2 block font-semibold text-[#243656]">Select Account Type</label>
+            <select suppressHydrationWarning value={userWise.accountType} onChange={(e) => onUserWiseChange({ ...userWise, accountType: e.target.value })} className="h-10 w-full rounded border border-gray-300 bg-white px-3 text-sm text-[#3f4658] outline-none focus:border-[#1a56db]">
+              <option value="">Select Account Type</option>
+              <option value="gmail">Gmail</option>
+              <option value="outlook">Outlook</option>
+              <option value="custom">Custom</option>
+            </select>
+          </div>
+          <div>
+            <label className="mb-2 block font-semibold text-[#243656]">Host Url</label>
+            <input suppressHydrationWarning value={userWise.hostUrl} onChange={(e) => onUserWiseChange({ ...userWise, hostUrl: e.target.value })} placeholder="smtp.domain.com" className="h-10 w-full rounded border border-gray-300 bg-gray-100 px-3 text-sm text-[#3f4658] placeholder:text-gray-400 outline-none focus:border-[#1a56db]" />
+          </div>
+          <div>
+            <label className="mb-2 block font-semibold text-[#243656]">Host Port</label>
+            <input suppressHydrationWarning value={userWise.hostPort} onChange={(e) => onUserWiseChange({ ...userWise, hostPort: e.target.value })} placeholder="0" className="h-10 w-full rounded border border-gray-300 bg-gray-100 px-3 text-sm text-[#3f4658] placeholder:text-gray-400 outline-none focus:border-[#1a56db]" />
+          </div>
+          <div>
+            <label className="mb-2 block font-semibold text-[#243656]">Email</label>
+            <input suppressHydrationWarning value={userWise.email} onChange={(e) => onUserWiseChange({ ...userWise, email: e.target.value })} placeholder="Email" className="h-10 w-full rounded border border-gray-300 bg-white px-3 text-sm text-[#3f4658] placeholder:text-gray-400 outline-none focus:border-[#1a56db]" />
+          </div>
+          <div>
+            <label className="mb-2 block font-semibold text-[#243656]">Password</label>
+            <input suppressHydrationWarning type="password" value={userWise.password} onChange={(e) => onUserWiseChange({ ...userWise, password: e.target.value })} placeholder="Password" className="h-10 w-full rounded border border-gray-300 bg-white px-3 text-sm text-[#3f4658] placeholder:text-gray-400 outline-none focus:border-[#1a56db]" />
+          </div>
+        </div>
+      )}
+    </ModalFrame>
   );
 }
 
