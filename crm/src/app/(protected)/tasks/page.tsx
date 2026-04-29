@@ -2011,7 +2011,6 @@ function TaskTableRow({
 }
 
 function TaskLeadInfoDrawer({ open, onClose, leadName }: { open: boolean; onClose: () => void; leadName: string }) {
-  const quickActions = ["WA", "Note", "Email", "Call", "SMS", "Task"];
   const quickActionMeta = {
     WA: { icon: MessageCircle, shell: "bg-emerald-100", iconColor: "text-emerald-600" },
     Note: { icon: PencilLine, shell: "bg-blue-100", iconColor: "text-blue-600" },
@@ -2020,6 +2019,7 @@ function TaskLeadInfoDrawer({ open, onClose, leadName }: { open: boolean; onClos
     SMS: { icon: Mail, shell: "bg-red-100", iconColor: "text-red-500" },
     Task: { icon: ClipboardList, shell: "bg-indigo-100", iconColor: "text-indigo-500" },
   } as const;
+  const quickActions = ["WA", "Note", "Email", "Call", "SMS", "Task"] as const satisfies readonly (keyof typeof quickActionMeta)[];
   const [activeQuickModal, setActiveQuickModal] = useState<null | "wa" | "note" | "email" | "call" | "sms" | "task">(null);
   const [documentsModalOpen, setDocumentsModalOpen] = useState(false);
   const centerTabs = ["Suggestion", "Timeline", "Followup", "Site Visit", "Meeting", "E-Mail", "Call", "SMS", "WhatsApp", "Projects", "Documents"] as const;
@@ -2376,7 +2376,7 @@ function TaskLeadInfoDrawer({ open, onClose, leadName }: { open: boolean; onClos
     }
 
     if (activeCenterTab === "Timeline") {
-      const pendingItem = timelineFeed[0];
+      const pendingItem = timelineFeed[0] as (typeof timelineFeed)[number];
       const timelineItems = timelineFeed.slice(1);
 
       return (
