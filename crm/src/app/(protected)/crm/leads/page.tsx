@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowLeftRight,
@@ -30,23 +30,16 @@ import { TransferLeadsModal } from "./transfer-leads-modal";
 const PRIMARY = "bg-[#1a56db] hover:bg-blue-700";
 const ORANGE_BTN = "bg-[#f97316] hover:bg-orange-600";
 
-const STAGE_RING = [
-  { label: "NEW LEAD", value: 294, displayPct: 5.26, ringPct: 30, color: "#2aa3ff" },
-  { label: "OPEN", value: 2076, displayPct: 37, ringPct: 26, color: "#00d4d4" },
-  { label: "FOLLOW UP", value: 1277, displayPct: 23, ringPct: 18, color: "#34d399" },
-  { label: "CALL BACK", value: 1520, displayPct: 27, ringPct: 14, color: "#fb923c" },
-  { label: "PROSPECT", value: 327, displayPct: 5.85, ringPct: 5, color: "#f97316" },
-  { label: "ALREADY TAGGED", value: 2, displayPct: 0.04, ringPct: 1, color: "#8b5cf6" },
-  { label: "BOOKED", value: 93, displayPct: 1.66, ringPct: 6, color: "#2563eb" },
-];
-
-const SUMMARY_CARDS = [
-  { title: "Untouched Leads", value: 4, note: "Leads claimed but not contacted" },
-  { title: "No Followps Leads", value: 3710, note: "Contacted but no future followups" },
-  { title: "Returning Leads", value: 501, note: "Leads returning again" },
-  { title: "Returning No FollowUp Leads", value: 47, note: "Returned leads but no future followups" },
-  { title: "Over Due Task Leads", value: 691, note: "Leads with overdue followups" },
-];
+const STAGE_RING_TEMPLATE = [
+  { key: "NEW LEAD", label: "NEW LEAD", color: "#2aa3ff" },
+  { key: "OPEN", label: "OPEN", color: "#00d4d4" },
+  { key: "FOLLOW UP", label: "FOLLOW UP", color: "#34d399" },
+  { key: "CALL BACK", label: "CALL BACK", color: "#fb923c" },
+  { key: "PROSPECT", label: "PROSPECT", color: "#f97316" },
+  { key: "WORKABLE", label: "WORKABLE", color: "#0ea5e9" },
+  { key: "ALREADY TAGGED", label: "ALREADY TAGGED", color: "#8b5cf6" },
+  { key: "BOOKED", label: "BOOKED", color: "#2563eb" },
+] as const;
 
 /** Options for the Leads table “Select Advance Filter” control (reference CRM). */
 const ADVANCED_FILTER_OPTIONS = [
@@ -174,11 +167,32 @@ const LEAD_ROWS = [
 type LeadApiRow = {
   id: string;
   createdAt: string;
+  leadNumber?: string | null;
+  leadDate?: string | null;
+  assignedDate?: string | null;
   name: string;
   phone: string;
   email?: string | null;
   source: string;
+  subSource?: string | null;
   status: "NEW" | "CONTACTED" | "QUALIFIED" | "CLOSED";
+  stageLabel?: string | null;
+  stageReason?: string | null;
+  projectNames?: string | null;
+  campaignName?: string | null;
+  presalesUserName?: string | null;
+  channelPartnerName?: string | null;
+  sourcingManager?: string | null;
+  location?: string | null;
+  subLocation?: string | null;
+  minBudget?: number | null;
+  maxBudget?: number | null;
+  remark?: string | null;
+  lastActivity?: string | null;
+  lastActivityDate?: string | null;
+  ethnicity?: string | null;
+  returningCount?: number | null;
+  pendingTaskCount?: number | null;
   assignedTo?: { id: string; name: string; email: string } | null;
   campaign?: { id: string; name: string; source: string } | null;
 };
@@ -525,6 +539,8 @@ function QuickLeadModal({
 }
 
 export default function CrmLeadsPage() {
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
   const [addMenuOpen, setAddMenuOpen] = useState(false);
   const [quickLeadOpen, setQuickLeadOpen] = useState(false);
   const [detailedLeadOpen, setDetailedLeadOpen] = useState(false);
@@ -534,7 +550,7 @@ export default function CrmLeadsPage() {
   const [exportLeadsOpen, setExportLeadsOpen] = useState(false);
   const [leadStageAnalysisVisible, setLeadStageAnalysisVisible] = useState(true);
   const queryClient = useQueryClient();
-  const leadsQuery = useLeads();
+  const leadsQuery = useLeads({ page, pageSize });
   const usersQuery = useUsers();
   const addMenuRef = useRef<HTMLDivElement>(null);
   const leadMoreRef = useRef<HTMLDivElement>(null);
@@ -564,31 +580,89 @@ export default function CrmLeadsPage() {
   }));
 
   const dbLeads = ((leadsQuery.data?.leads as LeadApiRow[] | undefined) ?? []).map((lead) => ({
-    id: lead.id.slice(-6),
-    date: new Date(lead.createdAt).toLocaleString(),
-    assignedDate: new Date(lead.createdAt).toLocaleString(),
-    status: [lead.status === "NEW" ? "New" : lead.status],
+    id: lead.leadNumber || lead.id.slice(-6),
+    date: lead.leadDate ? new Date(lead.leadDate).toLocaleString() : new Date(lead.createdAt).toLocaleString(),
+    assignedDate: lead.assignedDate
+      ? new Date(lead.assignedDate).toLocaleString()
+      : new Date(lead.createdAt).toLocaleString(),
+    status: [lead.status === "NEW" ? "New" : lead.status, ...(lead.pendingTaskCount ? [`Delay - ${lead.pendingTaskCount}`] : [])],
     name: lead.name,
     phone: lead.phone,
-    stage: lead.status === "NEW" ? "New Lead" : lead.status.replace("_", " "),
-    reason: "-",
+    stage: lead.stageLabel || (lead.status === "NEW" ? "New Lead" : lead.status.replace("_", " ")),
+    reason: lead.stageReason || "-",
     source: lead.source,
-    project: lead.campaign?.name ?? "-",
-    tags: lead.campaign?.source ?? "-",
-    preSales: "-",
+    project: lead.projectNames || lead.campaignName || lead.campaign?.name || "-",
+    tags: lead.subSource || lead.campaign?.source || "-",
+    preSales: lead.presalesUserName || "-",
     sales: lead.assignedTo?.name ?? "-",
-    channel: "-",
-    sourcing: "-",
+    channel: lead.channelPartnerName || "-",
+    sourcing: lead.sourcingManager || "-",
     requirement: "-",
-    location: "-",
-    budget: "-",
-    remark: lead.email ?? "-",
+    location: lead.subLocation || lead.location || "-",
+    budget:
+      lead.minBudget || lead.maxBudget
+        ? `${lead.minBudget ? Number(lead.minBudget).toLocaleString() : "0"} - ${lead.maxBudget ? Number(lead.maxBudget).toLocaleString() : "0"}`
+        : "-",
+    remark: lead.remark || lead.email || "-",
     siteVisit: "-",
-    lastActivity: new Date(lead.createdAt).toLocaleDateString(),
-    ethnicity: "-",
+    lastActivity: lead.lastActivityDate
+      ? new Date(lead.lastActivityDate).toLocaleDateString()
+      : lead.lastActivity || new Date(lead.createdAt).toLocaleDateString(),
+    ethnicity: lead.ethnicity || "-",
+    returningCount: lead.returningCount ?? 0,
+    pendingTaskCount: lead.pendingTaskCount ?? 0,
   }));
 
-  const visibleLeadRows = dbLeads.length > 0 ? dbLeads : LEAD_ROWS;
+  const visibleLeadRows = dbLeads;
+  const pagination = leadsQuery.data?.pagination as
+    | { page: number; pageSize?: number; limit?: number; total: number; totalPages: number }
+    | undefined;
+  const totalLeads = pagination?.total ?? visibleLeadRows.length;
+  const totalPages = pagination?.totalPages ?? 1;
+
+  const stageRing = useMemo(() => {
+    const total = dbLeads.length || 1;
+    return STAGE_RING_TEMPLATE.map((stage) => {
+      const value = dbLeads.filter((lead) => lead.stage.toUpperCase() === stage.key).length;
+      return {
+        ...stage,
+        value,
+        displayPct: Number(((value / total) * 100).toFixed(2)),
+        ringPct: Math.max(1, Math.round((value / total) * 100)),
+      };
+    });
+  }, [dbLeads]);
+
+  const summaryCards = useMemo(
+    () => [
+      {
+        title: "Untouched Leads",
+        value: dbLeads.filter((lead) => lead.stage.toUpperCase() === "NEW LEAD").length,
+        note: "Leads claimed but not contacted",
+      },
+      {
+        title: "No Followps Leads",
+        value: dbLeads.filter((lead) => !lead.lastActivity || lead.lastActivity === "-").length,
+        note: "Contacted but no future followups",
+      },
+      {
+        title: "Returning Leads",
+        value: dbLeads.filter((lead) => (lead.returningCount ?? 0) > 0).length,
+        note: "Leads returning again",
+      },
+      {
+        title: "Returning No FollowUp Leads",
+        value: dbLeads.filter((lead) => (lead.returningCount ?? 0) > 0 && (!lead.lastActivity || lead.lastActivity === "-")).length,
+        note: "Returned leads but no future followups",
+      },
+      {
+        title: "Over Due Task Leads",
+        value: dbLeads.filter((lead) => lead.status.some((s) => s.toLowerCase().includes("delay"))).length,
+        note: "Leads with overdue followups",
+      },
+    ],
+    [dbLeads],
+  );
 
   useEffect(() => {
     if (!addMenuOpen) return;
@@ -644,9 +718,9 @@ export default function CrmLeadsPage() {
 
             <div className="p-4">
               <div className="flex flex-col gap-6 xl:flex-row xl:items-start">
-                <Donut total={5589} segments={STAGE_RING} />
+                <Donut total={dbLeads.length} segments={stageRing} />
                 <div className="grid flex-1 grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7">
-                  {STAGE_RING.map((s) => (
+                  {stageRing.map((s) => (
                     <div key={s.label} className="border-l-2 pl-2" style={{ borderColor: s.color }}>
                       <p className="text-xl font-semibold leading-none text-gray-700">{s.value}</p>
                       <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-gray-600">{s.label}</p>
@@ -660,14 +734,14 @@ export default function CrmLeadsPage() {
         ) : null}
 
         <section className="grid grid-cols-1 gap-4 rounded-md border border-gray-100 bg-white p-4 shadow-sm sm:grid-cols-2 lg:grid-cols-5">
-          {SUMMARY_CARDS.map((card) => (
+          {summaryCards.map((card) => (
             <LeadMetricCard key={card.title} title={card.title} value={String(card.value)} note={card.note} />
           ))}
         </section>
 
         <section className="overflow-hidden rounded-md border border-gray-100 bg-white shadow-sm">
           <div className="flex flex-wrap items-center justify-between gap-4 border-b border-gray-100 p-4">
-            <h3 className="text-lg font-semibold text-gray-700">Leads ( {visibleLeadRows.length} )</h3>
+            <h3 className="text-lg font-semibold text-gray-700">Leads ( {totalLeads} )</h3>
             <div className="flex flex-wrap items-center gap-2">
               <div className="relative min-w-[200px] max-w-[260px]">
                 <select suppressHydrationWarning
@@ -792,12 +866,25 @@ export default function CrmLeadsPage() {
 
           <div className="flex flex-wrap items-center justify-between gap-4 border-b border-gray-100 p-4">
             <div className="flex overflow-hidden rounded border border-gray-300 text-sm shadow-sm">
-              <button suppressHydrationWarning className="border-r border-gray-300 bg-gray-50 px-3 py-1.5 text-gray-500 hover:bg-gray-100">Previous</button>
-              <button suppressHydrationWarning className="border-r border-[#1a56db] bg-[#1a56db] px-3 py-1.5 text-white">1</button>
-              <button suppressHydrationWarning className="border-r border-gray-300 px-3 py-1.5 text-[#1a56db] hover:bg-blue-50">2</button>
-              <button suppressHydrationWarning className="border-r border-gray-300 px-3 py-1.5 text-[#1a56db] hover:bg-blue-50">3</button>
-              <button suppressHydrationWarning className="border-r border-gray-300 px-3 py-1.5 text-[#1a56db] hover:bg-blue-50">4</button>
-              <button suppressHydrationWarning className="px-3 py-1.5 text-[#1a56db] hover:bg-blue-50">Next</button>
+              <button
+                suppressHydrationWarning
+                className="border-r border-gray-300 bg-gray-50 px-3 py-1.5 text-gray-500 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
+                disabled={page <= 1}
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+              >
+                Previous
+              </button>
+              <button suppressHydrationWarning className="border-r border-[#1a56db] bg-[#1a56db] px-3 py-1.5 text-white">
+                {page}
+              </button>
+              <button
+                suppressHydrationWarning
+                className="px-3 py-1.5 text-[#1a56db] hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-50"
+                disabled={page >= totalPages}
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              >
+                Next
+              </button>
             </div>
 
             <div className="flex flex-wrap items-center gap-3">
@@ -820,8 +907,20 @@ export default function CrmLeadsPage() {
                 </button>
               </div>
               <div className="relative">
-                <select suppressHydrationWarning className="w-16 appearance-none rounded border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700 shadow-sm outline-none">
-                  <option>20</option>
+                <select
+                  suppressHydrationWarning
+                  className="w-16 appearance-none rounded border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700 shadow-sm outline-none"
+                  value={pageSize}
+                  onChange={(e) => {
+                    setPage(1);
+                    setPageSize(Number(e.target.value));
+                  }}
+                >
+                  {[20, 50, 100, 200].map((size) => (
+                    <option key={size} value={size}>
+                      {size}
+                    </option>
+                  ))}
                 </select>
                 <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
               </div>
@@ -909,6 +1008,13 @@ export default function CrmLeadsPage() {
                     </td>
                   </tr>
                 ))}
+                {!leadsQuery.isLoading && visibleLeadRows.length === 0 ? (
+                  <tr>
+                    <td colSpan={25} className="px-4 py-10 text-center text-sm text-gray-500">
+                      No leads found in database. Import your Excel and refresh.
+                    </td>
+                  </tr>
+                ) : null}
               </tbody>
             </table>
           </div>
