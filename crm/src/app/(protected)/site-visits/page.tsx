@@ -7,11 +7,18 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { siteVisitsApi } from "@/lib/api-client/tasks-api";
+import type { SiteVisitDto } from "@/lib/api-client/tasks.types";
 import { tasksQueryKeys } from "@/lib/query/tasks-query";
 
 export default function SiteVisitsPage() {
   const qc = useQueryClient();
-  const [form, setForm] = useState({ leadId: "", propertyId: "", scheduledAt: "", notes: "", status: "SCHEDULED" });
+  const [form, setForm] = useState<{
+    leadId: string;
+    propertyId: string;
+    scheduledAt: string;
+    notes: string;
+    status: SiteVisitDto["status"];
+  }>({ leadId: "", propertyId: "", scheduledAt: "", notes: "", status: "SCHEDULED" });
 
   const { data } = useQuery({
     queryKey: tasksQueryKeys.siteVisitsList({}),
@@ -57,7 +64,7 @@ export default function SiteVisitsPage() {
             {(propertiesData?.properties ?? []).map((prop: any) => <option key={prop.id} value={prop.id}>{prop.name}</option>)}
           </select>
           <Input type="datetime-local" value={form.scheduledAt} onChange={(e) => setForm((s) => ({ ...s, scheduledAt: e.target.value }))} />
-          <select className="h-10 rounded-lg border bg-card px-3 text-sm" value={form.status} onChange={(e) => setForm((s) => ({ ...s, status: e.target.value }))}>
+          <select className="h-10 rounded-lg border bg-card px-3 text-sm" value={form.status} onChange={(e) => setForm((s) => ({ ...s, status: e.target.value as SiteVisitDto["status"] }))}>
             <option value="SCHEDULED">Scheduled</option>
             <option value="COMPLETED">Completed</option>
             <option value="CANCELLED">Cancelled</option>
@@ -72,7 +79,7 @@ export default function SiteVisitsPage() {
         <table className="w-full min-w-[900px] text-sm">
           <thead className="bg-muted/50 text-left"><tr><th className="px-4 py-3">Lead</th><th className="px-4 py-3">Property</th><th className="px-4 py-3">Schedule</th><th className="px-4 py-3">Status</th><th className="px-4 py-3">Assigned</th><th className="px-4 py-3">Notes</th></tr></thead>
           <tbody>
-            {(data?.siteVisits ?? data?.items ?? []).map((visit: any) => (
+            {(data?.siteVisits ?? []).map((visit: any) => (
               <tr key={visit.id} className="border-t"><td className="px-4 py-3">{visit.lead?.name}</td><td className="px-4 py-3">{visit.property?.name}</td><td className="px-4 py-3">{new Date(visit.scheduledAt).toLocaleString()}</td><td className="px-4 py-3">{visit.status}</td><td className="px-4 py-3">{visit.assignedTo?.name || "-"}</td><td className="px-4 py-3">{visit.notes || "-"}</td></tr>
             ))}
           </tbody>

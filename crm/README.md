@@ -77,6 +77,34 @@ npm run prisma:seed
 npm run dev
 ```
 
+## Vercel Deployment
+
+1. Import this repository in Vercel.
+2. Set project root to `crm` (if deploying from monorepo root).
+3. Keep default build command:
+
+```bash
+npm run build
+```
+
+4. Add required environment variables in Vercel Project Settings:
+   - `DATABASE_URL`
+   - `NEXTAUTH_SECRET`
+   - `NEXTAUTH_URL` (set to your production domain, e.g. `https://your-app.vercel.app`)
+   - `CRON_SECRET` (if using `/api/jobs/run`)
+5. Optional provider keys (only if integrations are enabled):
+   - `SMS_PROVIDER_KEY`
+   - `WHATSAPP_PROVIDER_KEY`
+   - `EMAIL_PROVIDER_KEY`
+   - `IVR_PROVIDER_KEY`
+6. Redeploy after environment variables are set.
+
+### Deployment Notes
+
+- Prisma client generation is handled via `postinstall`.
+- API routes are Node runtime compatible for Vercel serverless functions.
+- Build currently skips linting (`next.config.ts`) but still enforces TypeScript checks.
+
 ## Demo Credentials
 
 - Admin: `admin@acmecrm.com` / `Admin@123`

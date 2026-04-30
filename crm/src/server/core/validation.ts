@@ -2,9 +2,9 @@ import type { ZodType } from "zod";
 
 import { AppError } from "@/server/core/errors";
 
-function formatIssues(error: { issues: Array<{ path: (string | number)[]; message: string }> }) {
+function formatIssues(error: { issues: Array<{ path: PropertyKey[]; message: string }> }) {
   return error.issues.map((issue) => ({
-    path: issue.path.join("."),
+    path: issue.path.map((segment) => String(segment)).join("."),
     message: issue.message,
   }));
 }

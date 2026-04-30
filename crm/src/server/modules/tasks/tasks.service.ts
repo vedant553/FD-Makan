@@ -61,7 +61,7 @@ export async function createTask(ctx: AuthContext, input: CreateTaskInput) {
   return task;
 }
 
-export async function listTasks(ctx: AuthContext, filters: TaskFilterInput = {}) {
+export async function listTasks(ctx: AuthContext, filters: TaskFilterInput) {
   const { items, total } = await listTaskRecords(ctx, filters);
   const now = new Date();
   const filteredByType = items.filter((task) => {
