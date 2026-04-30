@@ -1,30 +1,41 @@
 import { NextRequest } from "next/server";
 
-import { badRequest, ok, serverError } from "@/lib/api-response";
-import { getAuthContext } from "@/lib/services/auth-context";
-import { deleteTask, updateTask } from "@/lib/services/task.service";
-import { updateTaskSchema } from "@/lib/validators/task";
+import { getTasksAuthContext } from "@/server/modules/tasks/tasks.auth";
+import { parseDomainBody, tasksErrorResponse, tasksOk } from "@/server/modules/tasks/tasks.domain";
+import { deleteTask, getTaskById, updateTask } from "@/server/modules/tasks/tasks.service";
+import { updateTaskSchema } from "@/server/modules/tasks/tasks.validators";
 
-export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const ctx = await getAuthContext();
+    const ctx = await getTasksAuthContext();
     const { id } = await params;
-    const parsed = updateTaskSchema.safeParse(await req.json());
-    if (!parsed.success) return badRequest(parsed.error.issues.map((i) => i.message).join(", "));
-
-    const task = await updateTask(ctx, id, parsed.data);
-    return ok({ task });
+    const task = await getTaskById(ctx, id);
+    return tasksOk({ task });
   } catch (error) {
-    return serverError(error);
+    return tasksErrorResponse(error);
   }
 }
 
+export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  try {
+    const ctx = await getTasksAuthContext();
+    const { id } = await params;
+    const payload = await parseDomainBody(updateTaskSchema, req);
+    const task = await updateTask(ctx, id, payload);
+    return tasksOk({ task });
+  } catch (error) {
+    return tasksErrorResponse(error);
+  }
+}
+
+export const PUT = PATCH;
+
 export async function DELETE(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const ctx = await getAuthContext();
+    const ctx = await getTasksAuthContext();
     const { id } = await params;
-    return ok(await deleteTask(ctx, id));
+    return tasksOk(await deleteTask(ctx, id));
   } catch (error) {
-    return serverError(error);
+    return tasksErrorResponse(error);
   }
 }

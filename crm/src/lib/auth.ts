@@ -4,6 +4,7 @@ import { type NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 
 import { prisma } from "@/lib/db";
+import { env } from "@/lib/env";
 
 type AppUser = {
   id: string;
@@ -15,7 +16,7 @@ type AppUser = {
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
-  secret: process.env.NEXTAUTH_SECRET,
+  secret: env.NEXTAUTH_SECRET,
   session: { strategy: "jwt" },
   pages: {
     signIn: "/login",

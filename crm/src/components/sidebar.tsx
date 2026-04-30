@@ -45,6 +45,11 @@ const MANAGE_SUBMENU = [
   { label: "API-Doc", href: "/manage/api-doc" },
 ] as const;
 
+const ACCOUNTS_SUBMENU = [
+  { label: "Ledger", href: "/accounts/ledger" },
+  { label: "Voucher", href: "/accounts/voucher" },
+] as const;
+
 const links = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/tasks", label: "Tasks", icon: ListTodo },
@@ -61,16 +66,20 @@ export function Sidebar({ isCollapsed }: { isCollapsed: boolean }) {
   const [crmMenuOpen, setCrmMenuOpen] = useState(false);
   const [bookingsMenuOpen, setBookingsMenuOpen] = useState(false);
   const [manageMenuOpen, setManageMenuOpen] = useState(false);
+  const [accountsMenuOpen, setAccountsMenuOpen] = useState(false);
   const [portalReady, setPortalReady] = useState(false);
   const [crmPos, setCrmPos] = useState({ top: 0, left: 0 });
   const [bookingsPos, setBookingsPos] = useState({ top: 0, left: 0 });
   const [managePos, setManagePos] = useState({ top: 0, left: 0 });
+  const [accountsPos, setAccountsPos] = useState({ top: 0, left: 0 });
   const crmCloseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const bookingsCloseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const manageCloseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const accountsCloseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const crmTriggerRef = useRef<HTMLDivElement | null>(null);
   const bookingsTriggerRef = useRef<HTMLDivElement | null>(null);
   const manageTriggerRef = useRef<HTMLDivElement | null>(null);
+  const accountsTriggerRef = useRef<HTMLDivElement | null>(null);
 
   const cancelCrmClose = () => {
     if (crmCloseTimer.current) {
@@ -148,9 +157,35 @@ export function Sidebar({ isCollapsed }: { isCollapsed: boolean }) {
     manageCloseTimer.current = setTimeout(() => setManageMenuOpen(false), 160);
   };
 
+  const cancelAccountsClose = () => {
+    if (accountsCloseTimer.current) {
+      clearTimeout(accountsCloseTimer.current);
+      accountsCloseTimer.current = null;
+    }
+  };
+
+  const updateAccountsMenuPosition = useCallback(() => {
+    const el = accountsTriggerRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    setAccountsPos({ top: rect.top, left: rect.right - 8 });
+  }, []);
+
+  const openAccountsMenu = () => {
+    cancelAccountsClose();
+    updateAccountsMenuPosition();
+    setAccountsMenuOpen(true);
+  };
+
+  const scheduleAccountsClose = () => {
+    cancelAccountsClose();
+    accountsCloseTimer.current = setTimeout(() => setAccountsMenuOpen(false), 160);
+  };
+
   useEffect(() => () => cancelCrmClose(), []);
   useEffect(() => () => cancelBookingsClose(), []);
   useEffect(() => () => cancelManageClose(), []);
+  useEffect(() => () => cancelAccountsClose(), []);
 
   useEffect(() => {
     setPortalReady(true);
@@ -170,6 +205,11 @@ export function Sidebar({ isCollapsed }: { isCollapsed: boolean }) {
     if (!manageMenuOpen) return;
     updateManageMenuPosition();
   }, [manageMenuOpen, isCollapsed, pathname, updateManageMenuPosition]);
+
+  useLayoutEffect(() => {
+    if (!accountsMenuOpen) return;
+    updateAccountsMenuPosition();
+  }, [accountsMenuOpen, isCollapsed, pathname, updateAccountsMenuPosition]);
 
   useEffect(() => {
     if (!crmMenuOpen) return;
@@ -204,6 +244,17 @@ export function Sidebar({ isCollapsed }: { isCollapsed: boolean }) {
     };
   }, [manageMenuOpen, updateManageMenuPosition]);
 
+  useEffect(() => {
+    if (!accountsMenuOpen) return;
+    const onScrollOrResize = () => updateAccountsMenuPosition();
+    window.addEventListener("scroll", onScrollOrResize, true);
+    window.addEventListener("resize", onScrollOrResize);
+    return () => {
+      window.removeEventListener("scroll", onScrollOrResize, true);
+      window.removeEventListener("resize", onScrollOrResize);
+    };
+  }, [accountsMenuOpen, updateAccountsMenuPosition]);
+
   return (
     <aside
       className={cn(
@@ -231,6 +282,7 @@ export function Sidebar({ isCollapsed }: { isCollapsed: boolean }) {
           const isCrm = link.href === "/crm";
           const isBookings = link.href === "/bookings";
           const isManage = link.href === "/manage";
+          const isAccounts = link.href === "/accounts";
 
           if (isCrm) {
             return (
@@ -290,6 +342,31 @@ export function Sidebar({ isCollapsed }: { isCollapsed: boolean }) {
                 className="w-full"
                 onMouseEnter={openManageMenu}
                 onMouseLeave={scheduleManageClose}
+              >
+                <Link
+                  href={link.href}
+                  className={cn(
+                    "flex w-full items-center rounded-lg px-3 py-2 text-sm",
+                    isCollapsed ? "justify-center" : "gap-2",
+                    isActive ? "bg-primary text-primary-foreground" : "hover:bg-muted",
+                  )}
+                  title={isCollapsed ? link.label : undefined}
+                >
+                  <Icon className="h-5 w-5 shrink-0" />
+                  {!isCollapsed && <span>{link.label}</span>}
+                </Link>
+              </div>
+            );
+          }
+
+          if (isAccounts) {
+            return (
+              <div
+                key={link.href}
+                ref={accountsTriggerRef}
+                className="w-full"
+                onMouseEnter={openAccountsMenu}
+                onMouseLeave={scheduleAccountsClose}
               >
                 <Link
                   href={link.href}
@@ -426,6 +503,43 @@ export function Sidebar({ isCollapsed }: { isCollapsed: boolean }) {
             <div className="h-10 w-2 shrink-0" aria-hidden />
             <div className="min-w-[220px] flex-1 overflow-y-auto overscroll-contain rounded-md border border-border bg-card py-2 shadow-lg">
               {MANAGE_SUBMENU.map((item) => {
+                const subActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={cn(
+                      "flex items-center gap-2 px-4 py-2.5 text-[13px] font-medium transition-colors",
+                      subActive ? "bg-primary text-primary-foreground" : "text-foreground hover:bg-muted hover:text-foreground",
+                    )}
+                  >
+                    <span className={cn("select-none", subActive ? "text-primary-foreground" : "text-muted-foreground")} aria-hidden>
+                      &gt;&gt;
+                    </span>
+                    {item.label}
+                  </Link>
+                );
+              })}
+            </div>
+          </div>,
+          document.body,
+        )}
+
+      {portalReady &&
+        accountsMenuOpen &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <div
+            role="menu"
+            aria-hidden={false}
+            onMouseEnter={openAccountsMenu}
+            onMouseLeave={scheduleAccountsClose}
+            className="fixed z-[200] flex max-h-[min(100vh-16px,480px)] max-w-[min(calc(100vw-12px),280px)] translate-x-0 flex-row items-start transition-all duration-200 ease-out will-change-transform"
+            style={{ top: accountsPos.top, left: accountsPos.left }}
+          >
+            <div className="h-10 w-2 shrink-0" aria-hidden />
+            <div className="min-w-[220px] flex-1 overflow-y-auto overscroll-contain rounded-md border border-border bg-card py-2 shadow-lg">
+              {ACCOUNTS_SUBMENU.map((item) => {
                 const subActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
                 return (
                   <Link

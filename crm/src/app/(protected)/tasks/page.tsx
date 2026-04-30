@@ -2,7 +2,13 @@
 
 import React, { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { useSession } from "next-auth/react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { User, Search, X, MoreVertical, ChevronDown, Download, CalendarDays, Menu, LayoutGrid, Plus, MessageCircle, PencilLine, Mail, Phone, ClipboardList, Check, Pencil, Trash2, RefreshCw } from "lucide-react";
+import { getTaskActionPermissions, type TaskRole } from "@/lib/rbac/tasks";
+import { request } from "@/lib/api-client/request";
+import { tasksApi } from "@/lib/api-client/tasks-api";
+import { invalidateTasksModuleQueries } from "@/lib/query/tasks-query";
 
 type TaskEditPayload = {
   lead: string;
@@ -14,6 +20,11 @@ type TaskEditPayload = {
 
 export default function TasksPage() {
   const searchParams = useSearchParams();
+  const { data: session, status: sessionStatus } = useSession();
+  const role = ((session?.user?.role as TaskRole | undefined) ?? "AGENT");
+  const authReady = sessionStatus !== "loading";
+  const taskPermissions = authReady ? getTaskActionPermissions(role) : null;
+  const [permissionMessage, setPermissionMessage] = useState<string | null>(null);
   const initialTab = searchParams.get("tab");
   const [activeTab, setActiveTab] = useState(
     initialTab === "site-visit" ? "Site Visit" : "Tasks",
@@ -59,8 +70,55 @@ export default function TasksPage() {
     else if (tab === "site-visit") setActiveTab("Site Visit");
   }, [searchParams]);
 
+  useEffect(() => {
+    const handler = () => {
+      setPermissionMessage("You do not have permission to perform this action.");
+      setTimeout(() => setPermissionMessage(null), 3500);
+    };
+    if (typeof window !== "undefined") {
+      window.addEventListener("tasks-api-forbidden", handler as EventListener);
+    }
+    return () => {
+      if (typeof window !== "undefined") {
+        window.removeEventListener("tasks-api-forbidden", handler as EventListener);
+      }
+    };
+  }, []);
+
+  if (sessionStatus === "loading") {
+    return (
+      <div className="min-h-screen bg-[#f4f7f6] p-6">
+        <div className="mx-auto max-w-3xl rounded-md border border-gray-200 bg-white p-6 text-center text-gray-600 shadow-sm">
+          Checking your task permissions...
+        </div>
+      </div>
+    );
+  }
+
+  if (sessionStatus === "unauthenticated") {
+    return (
+      <div className="min-h-screen bg-[#f4f7f6] p-6">
+        <div className="mx-auto max-w-3xl rounded-md border border-gray-200 bg-white p-6 text-center shadow-sm">
+          <p className="text-lg font-semibold text-gray-700">Session expired</p>
+          <p className="mt-2 text-sm text-gray-600">Please sign in again to continue managing tasks.</p>
+          <a
+            href="/login"
+            className="mt-4 inline-flex rounded bg-[#1a56db] px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+          >
+            Go to Sign In
+          </a>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen font-sans text-gray-800 p-4 md:p-6 bg-[#f4f7f6]">
+      {permissionMessage ? (
+        <div className="fixed right-4 top-4 z-[220] rounded border border-amber-300 bg-amber-50 px-4 py-2 text-sm text-amber-800 shadow-sm">
+          {permissionMessage}
+        </div>
+      ) : null}
       {/* Top Tabs */}
       <div className="flex border-b border-gray-200 bg-white shadow-sm mb-4">
         <button suppressHydrationWarning 
@@ -81,6 +139,13 @@ export default function TasksPage() {
         >
           Calendar
         </button>
+      </div>
+      <div className="mb-4 rounded border border-blue-100 bg-blue-50 px-4 py-2 text-xs text-blue-700">
+        {role === "ADMIN"
+          ? "Viewing all tasks within your organization."
+          : role === "MANAGER"
+            ? "Viewing team-scoped tasks within your organization."
+            : "Viewing tasks assigned to you or created by you."}
       </div>
 
       <div className="pb-6">
@@ -117,12 +182,14 @@ export default function TasksPage() {
               <div className="flex flex-wrap justify-end items-center gap-2 pt-4 mt-4">
                 <button suppressHydrationWarning className="bg-[#1a56db] hover:bg-blue-700 text-white px-4 py-1.5 rounded text-sm font-medium transition-colors">Search</button>
                 <button suppressHydrationWarning className="bg-[#1a56db] hover:bg-blue-700 text-white px-4 py-1.5 rounded text-sm font-medium transition-colors">Clear</button>
-                <button suppressHydrationWarning
-                  className="bg-[#1a56db] hover:bg-blue-700 text-white px-4 py-1.5 rounded text-sm font-medium transition-colors"
-                  onClick={() => setIsTaskModalOpen(true)}
-                >
-                  Add
-                </button>
+                {taskPermissions?.create ? (
+                  <button suppressHydrationWarning
+                    className="bg-[#1a56db] hover:bg-blue-700 text-white px-4 py-1.5 rounded text-sm font-medium transition-colors"
+                    onClick={() => setIsTaskModalOpen(true)}
+                  >
+                    Add
+                  </button>
+                ) : null}
                 <button suppressHydrationWarning
                   className="bg-[#1a56db] hover:bg-blue-700 text-white px-4 py-1.5 rounded text-sm font-medium transition-colors"
                   onClick={() => {
@@ -142,17 +209,23 @@ export default function TasksPage() {
                     <MoreVertical className="w-4 h-4" />
                   </button>
                   <div className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded shadow-lg py-1 hidden group-hover:block z-50 min-w-[160px]">
-                    <button
-                      suppressHydrationWarning
-                      className="w-full text-left px-4 py-2 text-[13px] text-gray-700 hover:bg-gray-50 flex items-center gap-2"
-                      onClick={() => setTaskTableDownloadOpen(true)}
-                    >
-                      <Download className="w-4 h-4 text-gray-600" />
-                      Table Download
-                    </button>
-                    <button suppressHydrationWarning className="w-full text-left px-4 py-2 text-[13px] text-gray-700 hover:bg-gray-50 flex items-center gap-2">
-                      <Download className="w-4 h-4 text-gray-600" /> Bulk Download
-                    </button>
+                    {taskPermissions?.export ? (
+                      <>
+                        <button
+                          suppressHydrationWarning
+                          className="w-full text-left px-4 py-2 text-[13px] text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                          onClick={() => setTaskTableDownloadOpen(true)}
+                        >
+                          <Download className="w-4 h-4 text-gray-600" />
+                          Table Download
+                        </button>
+                        <button suppressHydrationWarning className="w-full text-left px-4 py-2 text-[13px] text-gray-700 hover:bg-gray-50 flex items-center gap-2">
+                          <Download className="w-4 h-4 text-gray-600" /> Bulk Download
+                        </button>
+                      </>
+                    ) : (
+                      <span className="block px-4 py-2 text-[12px] text-gray-500">No export permission</span>
+                    )}
                   </div>
                 </div>
               </div>
@@ -742,12 +815,13 @@ export default function TasksPage() {
           </div>
         )}
       </div>
-      {isTaskModalOpen && <CreateTaskModal open={isTaskModalOpen} onClose={() => setIsTaskModalOpen(false)} />}
+      {isTaskModalOpen && <CreateTaskModal open={isTaskModalOpen} onClose={() => setIsTaskModalOpen(false)} canAssign={Boolean(taskPermissions?.assign)} />}
       {isCalendarAddModalOpen && <CalendarAddModal open={isCalendarAddModalOpen} onClose={() => setIsCalendarAddModalOpen(false)} />}
       {taskEditData && (
         <EditTaskModal
           open={Boolean(taskEditData)}
           data={taskEditData}
+          canAssign={Boolean(taskPermissions?.reassign)}
           onClose={() => setTaskEditData(null)}
         />
       )}
@@ -1227,9 +1301,10 @@ function SiteVisitAnalysisReport({
   );
 }
 
-function CreateTaskModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+function CreateTaskModal({ open, onClose, canAssign }: { open: boolean; onClose: () => void; canAssign: boolean }) {
+  const queryClient = useQueryClient();
   const [activityType, setActivityType] = useState("Call");
-  const [salesAgent, setSalesAgent] = useState("Aman Dubey");
+  const [salesAgent, setSalesAgent] = useState("");
   const [lead, setLead] = useState("");
   const [title, setTitle] = useState("Call at Apr 25, 2026, 7:53 PM");
   const [remark, setRemark] = useState("");
@@ -1237,6 +1312,105 @@ function CreateTaskModal({ open, onClose }: { open: boolean; onClose: () => void
   const [completed, setCompleted] = useState(false);
   const [dueDate, setDueDate] = useState("Apr 25, 2026, 7:53 PM");
   const [reminder, setReminder] = useState("15 Minute");
+  const [formError, setFormError] = useState<string | null>(null);
+  const [formSuccess, setFormSuccess] = useState<string | null>(null);
+
+  const { data: leadsData } = useQuery({
+    queryKey: ["tasks-modal", "leads"],
+    queryFn: () =>
+      request<{ leads: Array<{ id: string; name: string }> }>("/api/leads", {
+        method: "GET",
+        retries: 1,
+      }),
+    enabled: open,
+  });
+
+  const { data: usersData } = useQuery({
+    queryKey: ["tasks-modal", "users"],
+    queryFn: () =>
+      request<{ users: Array<{ id: string; name: string }> }>("/api/users", {
+        method: "GET",
+        retries: 1,
+      }),
+    enabled: open && canAssign,
+  });
+
+  useEffect(() => {
+    if (!open) return;
+    if (canAssign && usersData?.users?.length && !salesAgent) {
+      setSalesAgent(usersData.users[0].id);
+    }
+  }, [open, canAssign, usersData, salesAgent]);
+
+  const createTaskMutation = useMutation({
+    mutationFn: (payload: {
+      title: string;
+      description?: string | null;
+      leadId: string;
+      assignedToId?: string | null;
+      priority?: "LOW" | "MEDIUM" | "HIGH";
+      status?: "PENDING" | "IN_PROGRESS" | "COMPLETED";
+      dueDate: string;
+      reminderTime?: string | null;
+    }) => tasksApi.create(payload),
+    onSuccess: async () => {
+      setFormSuccess("Task created successfully.");
+      setFormError(null);
+      await invalidateTasksModuleQueries(queryClient);
+      setTimeout(() => {
+        setFormSuccess(null);
+        onClose();
+      }, 600);
+    },
+    onError: (error: unknown) => {
+      setFormSuccess(null);
+      setFormError(error instanceof Error ? error.message : "Failed to create task.");
+    },
+  });
+
+  const parseDateToIso = (value: string) => {
+    const parsed = new Date(value);
+    return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString();
+  };
+
+  const computeReminderIso = (dueIso: string) => {
+    const due = new Date(dueIso).getTime();
+    const offsets: Record<string, number> = {
+      "15 Minute": 15 * 60 * 1000,
+      "30 Minute": 30 * 60 * 1000,
+      "1 Hour": 60 * 60 * 1000,
+      "1 Day": 24 * 60 * 60 * 1000,
+    };
+    const offset = offsets[reminder] ?? 15 * 60 * 1000;
+    return new Date(due - offset).toISOString();
+  };
+
+  const handleSubmit = () => {
+    setFormError(null);
+    setFormSuccess(null);
+
+    if (!lead) {
+      setFormError("Please select a lead.");
+      return;
+    }
+
+    const dueIso = parseDateToIso(dueDate);
+    if (!dueIso) {
+      setFormError("Please enter a valid due date.");
+      return;
+    }
+
+    createTaskMutation.mutate({
+      title: title.trim(),
+      description: remark.trim() ? remark.trim() : null,
+      leadId: lead,
+      assignedToId: canAssign && salesAgent ? salesAgent : null,
+      priority: "MEDIUM",
+      status: completed ? "COMPLETED" : "PENDING",
+      dueDate: dueIso,
+      reminderTime: remindMe ? computeReminderIso(dueIso) : null,
+    });
+  };
 
   if (!open) {
     return null;
@@ -1281,7 +1455,8 @@ function CreateTaskModal({ open, onClose }: { open: boolean; onClose: () => void
               label="Select Sales Agent"
               value={salesAgent}
               onChange={(event) => setSalesAgent(event.target.value)}
-              options={["Aman Dubey", "Ajay Jaiswal", "Sakshi Pagare"]}
+              options={(usersData?.users ?? []).map((u) => ({ value: u.id, label: u.name }))}
+              disabled={!canAssign}
             />
           </div>
 
@@ -1289,7 +1464,7 @@ function CreateTaskModal({ open, onClose }: { open: boolean; onClose: () => void
             label="Select Lead"
             value={lead}
             onChange={(event) => setLead(event.target.value)}
-            options={["", "Saumittra Mathur", "Ghanshyam Maniya", "Prakash Pandey"]}
+            options={(leadsData?.leads ?? []).map((l) => ({ value: l.id, label: l.name }))}
             placeholder="Search & Select Lead"
           />
 
@@ -1344,11 +1519,15 @@ function CreateTaskModal({ open, onClose }: { open: boolean; onClose: () => void
         </div>
 
         <div className="flex justify-end gap-3 border-t border-gray-200 bg-white px-6 py-4">
+          {formError ? <span className="mr-auto text-sm text-rose-600">{formError}</span> : null}
+          {formSuccess ? <span className="mr-auto text-sm text-emerald-600">{formSuccess}</span> : null}
           <button suppressHydrationWarning
             type="button"
+            onClick={handleSubmit}
+            disabled={createTaskMutation.isPending}
             className="bg-[#1a56db] px-6 py-2 text-[15px] font-medium text-white transition-colors hover:bg-blue-700"
           >
-            Submit
+            {createTaskMutation.isPending ? "Submitting..." : "Submit"}
           </button>
           <button suppressHydrationWarning
             type="button"
@@ -1676,12 +1855,14 @@ function ModalSelect({
   options,
   onChange,
   placeholder,
+  disabled = false,
 }: {
   label: string;
   value: string;
-  options: string[];
+  options: Array<string | { value: string; label: string }>;
   onChange: (event: React.ChangeEvent<HTMLSelectElement>) => void;
   placeholder?: string;
+  disabled?: boolean;
 }) {
   return (
     <div className="flex flex-col">
@@ -1690,16 +1871,24 @@ function ModalSelect({
         <select suppressHydrationWarning
           value={value}
           onChange={onChange}
-          className="w-full appearance-none rounded border border-gray-300 bg-white px-4 py-3 pr-10 text-[15px] text-[#3a3f52] outline-none transition-colors focus:border-[#1a56db]"
+          disabled={disabled}
+          className={`w-full appearance-none rounded border border-gray-300 bg-white px-4 py-3 pr-10 text-[15px] text-[#3a3f52] outline-none transition-colors focus:border-[#1a56db] ${disabled ? "cursor-not-allowed bg-gray-100 text-gray-500" : ""}`}
         >
           {placeholder && <option value="">{placeholder}</option>}
           {options
-            .filter((option) => option.length > 0)
-            .map((option) => (
-              <option key={option} value={option}>
-                {option}
-              </option>
-            ))}
+            .filter((option) =>
+              typeof option === "string" ? option.length > 0 : option.value.length > 0,
+            )
+            .map((option) => {
+              const optionValue = typeof option === "string" ? option : option.value;
+              const optionLabel = typeof option === "string" ? option : option.label;
+              return (
+                <option key={optionValue} value={optionValue}>
+                  {optionLabel}
+                </option>
+              );
+            })
+          }
         </select>
         <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-6 w-6 -translate-y-1/2 text-gray-400" />
       </div>
@@ -1760,7 +1949,7 @@ function ModalToggle({
   );
 }
 
-function EditTaskModal({ open, data, onClose }: { open: boolean; data: TaskEditPayload; onClose: () => void }) {
+function EditTaskModal({ open, data, onClose, canAssign }: { open: boolean; data: TaskEditPayload; onClose: () => void; canAssign: boolean }) {
   const [activityType, setActivityType] = useState(data.activityType || "Call");
   const [salesAgent, setSalesAgent] = useState(data.salesAgent || "");
   const [lead, setLead] = useState(data.lead ? `${data.lead} (${data.salesAgent})` : "");
@@ -1808,7 +1997,7 @@ function EditTaskModal({ open, data, onClose }: { open: boolean; data: TaskEditP
             <div className="flex flex-col">
               <label className="mb-2 text-[15px] font-semibold text-[#3a3f52]">Select Sales Agent</label>
               <div className="relative">
-                <input suppressHydrationWarning value={salesAgent} onChange={(event) => setSalesAgent(event.target.value)} className="w-full rounded border border-gray-300 px-4 py-3 pr-14 text-[15px] text-[#3a3f52] outline-none" />
+                <input suppressHydrationWarning value={salesAgent} onChange={(event) => setSalesAgent(event.target.value)} disabled={!canAssign} className={`w-full rounded border border-gray-300 px-4 py-3 pr-14 text-[15px] text-[#3a3f52] outline-none ${!canAssign ? "cursor-not-allowed bg-gray-100 text-gray-500" : ""}`} />
                 <X className="pointer-events-none absolute right-8 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
                 <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
               </div>
@@ -1940,6 +2129,21 @@ function TaskTableRow({
   completedBy?: string,
   onUpdateClick?: (payload: TaskEditPayload) => void
 }) {
+  const { data: session, status: sessionStatus } = useSession();
+  const role = ((session?.user?.role as TaskRole | undefined) ?? "AGENT");
+  const authReady = sessionStatus !== "loading";
+  const taskPermissions = authReady
+    ? getTaskActionPermissions(role)
+    : {
+        create: false,
+        update: false,
+        delete: false,
+        assign: false,
+        reassign: false,
+        complete: false,
+        export: false,
+      };
+
   return (
     <tr className="hover:bg-gray-50 text-[13px] text-gray-600">
       <td className="py-2.5 px-4 border-r border-gray-100"><input suppressHydrationWarning type="checkbox" className="rounded border-gray-300" /></td>
@@ -1981,28 +2185,39 @@ function TaskTableRow({
             <ChevronDown className="h-3.5 w-3.5" />
           </button>
           <div className="absolute right-0 top-full z-20 mt-1 hidden min-w-[140px] rounded border border-gray-200 bg-white py-1 shadow-md group-hover:block">
-            <button suppressHydrationWarning type="button" className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-[12px] text-gray-700 hover:bg-gray-50">
-              <Check className="h-3.5 w-3.5" /> Mark As Done
-            </button>
-            <button
-              suppressHydrationWarning
-              type="button"
-              onClick={() =>
-                onUpdateClick?.({
-                  lead,
-                  salesAgent: assignedTo,
-                  title,
-                  dueDate: schDate,
-                  activityType: "Call",
-                })
-              }
-              className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-[12px] text-gray-700 hover:bg-gray-50"
-            >
-              <Pencil className="h-3.5 w-3.5" /> Update
-            </button>
-            <button suppressHydrationWarning type="button" className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-[12px] text-gray-700 hover:bg-gray-50">
-              <Trash2 className="h-3.5 w-3.5" /> Delete
-            </button>
+            {taskPermissions.complete ? (
+              <button suppressHydrationWarning type="button" className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-[12px] text-gray-700 hover:bg-gray-50">
+                <Check className="h-3.5 w-3.5" /> Mark As Done
+              </button>
+            ) : null}
+            {taskPermissions.update ? (
+              <button
+                suppressHydrationWarning
+                type="button"
+                onClick={() =>
+                  onUpdateClick?.({
+                    lead,
+                    salesAgent: assignedTo,
+                    title,
+                    dueDate: schDate,
+                    activityType: "Call",
+                  })
+                }
+                className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-[12px] text-gray-700 hover:bg-gray-50"
+              >
+                <Pencil className="h-3.5 w-3.5" /> Update
+              </button>
+            ) : null}
+            {taskPermissions.delete ? (
+              <button suppressHydrationWarning type="button" className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-[12px] text-gray-700 hover:bg-gray-50">
+                <Trash2 className="h-3.5 w-3.5" /> Delete
+              </button>
+            ) : null}
+            {!taskPermissions.complete && !taskPermissions.update && !taskPermissions.delete ? (
+              <span className="block px-3 py-1.5 text-[12px] text-gray-500">
+                {authReady ? "No actions available" : "Checking permissions..."}
+              </span>
+            ) : null}
           </div>
         </div>
       </td>

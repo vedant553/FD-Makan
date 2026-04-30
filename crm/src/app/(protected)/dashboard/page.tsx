@@ -2,32 +2,34 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
-import { 
-  Users, User, RefreshCcw, Hand, UserMinus, 
-  ClipboardList, Home, Phone,
-  PhoneCall, Handshake,
-  MoreVertical, ChevronDown
-} from "lucide-react";
+import { Users, User, RefreshCcw, Hand, UserMinus, ClipboardList, Home, Phone, PhoneCall, Handshake, MoreVertical, ChevronDown } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { PageShell, PageTitle, Panel, PanelHeader } from "@/components/crm/page-shell";
+
+const selectClassName =
+  "h-10 min-w-[150px] rounded-lg border border-border bg-card px-3 text-sm text-muted-foreground outline-none focus:ring-2 focus:ring-primary/20";
 
 export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState("Tasks");
 
   return (
-    <div className="space-y-6 bg-[#f4f7f6] p-6 min-h-screen font-sans text-gray-800">
+    <PageShell className="space-y-6">
+      <PageTitle>Dashboard</PageTitle>
       {/* All Leads Section */}
-      <section className="bg-white rounded-md shadow-sm p-4">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-4 md:gap-0">
-          <h2 className="text-lg font-semibold text-gray-700">All Leads</h2>
+      <Panel>
+        <PanelHeader className="flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
+          <h2 className="text-base font-semibold text-foreground">All Leads</h2>
           <div className="flex flex-wrap gap-2">
-            <select className="border border-gray-300 rounded text-sm px-3 py-1.5 text-gray-500 bg-white min-w-[150px] outline-none">
+            <select className={selectClassName}>
               <option>Select Team</option>
             </select>
-            <select className="border border-gray-300 rounded text-sm px-3 py-1.5 text-gray-500 bg-white min-w-[150px] outline-none">
+            <select className={selectClassName}>
               <option>Select Sales Agent</option>
             </select>
           </div>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+        </PanelHeader>
+        <div className="grid grid-cols-1 gap-4 p-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 md:p-5">
           <Link href="/crm/leads" className="block">
             <MetricCard title="Total Leads" value="8665" icon={<Users className="w-5 h-5 text-indigo-600" />} iconBg="bg-indigo-100" />
           </Link>
@@ -44,22 +46,22 @@ export default function DashboardPage() {
             <MetricCard title="Unassigned" value="0" icon={<UserMinus className="w-5 h-5 text-green-500" />} iconBg="bg-green-100" />
           </Link>
         </div>
-      </section>
+      </Panel>
 
       {/* Today&apos;s Leads Section */}
-      <section className="bg-white rounded-md shadow-sm p-4">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-4 md:gap-0">
-          <h2 className="text-lg font-semibold text-gray-700">Today&apos;s Leads</h2>
+      <Panel>
+        <PanelHeader className="flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
+          <h2 className="text-base font-semibold text-foreground">Today&apos;s Leads</h2>
           <div className="flex flex-wrap gap-2">
-            <select className="border border-gray-300 rounded text-sm px-3 py-1.5 text-gray-500 bg-white min-w-[150px] outline-none">
+            <select className={selectClassName}>
               <option>Select Team</option>
             </select>
-            <select className="border border-gray-300 rounded text-sm px-3 py-1.5 text-gray-500 bg-white min-w-[150px] outline-none">
+            <select className={selectClassName}>
               <option>Select Sales Agent</option>
             </select>
           </div>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+        </PanelHeader>
+        <div className="grid grid-cols-1 gap-4 p-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 md:p-5">
           <Link href="/crm/leads" className="block">
             <MetricCard title="Leads" value="7" icon={<Users className="w-5 h-5 text-indigo-600" />} iconBg="bg-indigo-100" />
           </Link>
@@ -76,17 +78,17 @@ export default function DashboardPage() {
             <MetricCard title="Site Visits" value="0" icon={<Home className="w-5 h-5 text-green-500" />} iconBg="bg-green-100" />
           </Link>
         </div>
-      </section>
+      </Panel>
 
       {/* Today&apos;s Activities Report */}
-      <section className="bg-white rounded-md shadow-sm p-4">
-        <div className="mb-4">
-          <h2 className="text-lg font-semibold text-gray-700 mb-3">Today&apos;s Activities Report</h2>
+      <Panel>
+        <div className="p-4 md:p-5">
+          <h2 className="mb-3 text-base font-semibold text-foreground">Today&apos;s Activities Report</h2>
           <div className="flex flex-wrap gap-2 mb-4">
-            <select className="border border-gray-300 rounded text-sm px-3 py-1.5 text-gray-500 bg-white min-w-[150px] outline-none">
+            <select className={selectClassName}>
               <option>Select Team</option>
             </select>
-            <select className="border border-gray-300 rounded text-sm px-3 py-1.5 text-gray-500 bg-white min-w-[150px] outline-none">
+            <select className={selectClassName}>
               <option>Select Sales Agent</option>
             </select>
           </div>
@@ -133,37 +135,39 @@ export default function DashboardPage() {
             </Link>
           </div>
         </div>
-      </section>
+      </Panel>
 
       {/* Tabs Section */}
-      <section className="bg-white rounded-md shadow-sm">
-        <div className="flex border-b border-gray-200">
-          <button 
-            className={`px-6 py-3 text-sm font-medium ${activeTab === 'Tasks' ? 'bg-[#1a56db] text-white' : 'text-[#1a56db] hover:bg-gray-50'}`}
-            onClick={() => setActiveTab('Tasks')}
+      <Panel>
+        <div className="flex border-b border-border p-2">
+          <Button
+            variant={activeTab === "Tasks" ? "default" : "ghost"}
+            className="rounded-md"
+            onClick={() => setActiveTab("Tasks")}
           >
             Tasks
-          </button>
-          <button 
-            className={`px-6 py-3 text-sm font-medium ${activeTab === 'Site Visit' ? 'bg-[#1a56db] text-white' : 'text-[#1a56db] hover:bg-gray-50'}`}
-            onClick={() => setActiveTab('Site Visit')}
+          </Button>
+          <Button
+            variant={activeTab === "Site Visit" ? "default" : "ghost"}
+            className="rounded-md"
+            onClick={() => setActiveTab("Site Visit")}
           >
             Site Visit
-          </button>
+          </Button>
         </div>
 
-        <div className="p-4">
-          {activeTab === 'Tasks' && (
+        <div className="p-4 md:p-5">
+          {activeTab === "Tasks" && (
             <div>
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="font-medium text-gray-700">Task (34)</h3>
-                <select className="border border-gray-300 rounded text-sm px-3 py-1.5 text-gray-500 bg-white min-w-[120px] outline-none">
+              <div className="mb-4 flex items-center justify-between">
+                <h3 className="font-medium text-foreground">Task (34)</h3>
+                <select className={selectClassName}>
                   <option>Today</option>
                 </select>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm text-left border-collapse">
-                  <thead className="bg-gray-50 text-gray-600 uppercase text-xs border-y">
+                  <thead className="border-y bg-muted/40 text-xs uppercase text-muted-foreground">
                     <tr>
                       <th className="py-3 px-4 font-semibold">#</th>
                       <th className="py-3 px-4 font-semibold">DETAILS</th>
@@ -176,7 +180,7 @@ export default function DashboardPage() {
                       <th className="py-3 px-4 font-semibold">ACTION</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-100">
+                  <tbody className="divide-y divide-border">
                     <TaskRow id="1" details="Prasad Na" date="Apr 25, 2026, 10:03:52 AM" agenda="Ringing" agent="Supriya Jadhav" />
                     <TaskRow id="2" details="Mohd Arif" date="Apr 25, 2026, 10:15:11 AM" agenda="Saturday arrange VC by 11AM" agent="Supriya Jadhav" />
                     <TaskRow id="3" details="Vijay Patil" date="Apr 25, 2026, 10:16:39 AM" agenda="Switch off" agent="Supriya Jadhav" />
@@ -189,17 +193,17 @@ export default function DashboardPage() {
             </div>
           )}
 
-          {activeTab === 'Site Visit' && (
+          {activeTab === "Site Visit" && (
             <div>
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="font-medium text-gray-700">Site Visit (0)</h3>
-                <select className="border border-gray-300 rounded text-sm px-3 py-1.5 text-gray-500 bg-white min-w-[120px] outline-none">
+              <div className="mb-4 flex items-center justify-between">
+                <h3 className="font-medium text-foreground">Site Visit (0)</h3>
+                <select className={selectClassName}>
                   <option>Today</option>
                 </select>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm text-left border-collapse">
-                  <thead className="bg-gray-50 text-gray-600 uppercase text-xs border-y">
+                  <thead className="border-y bg-muted/40 text-xs uppercase text-muted-foreground">
                     <tr>
                       <th className="py-3 px-4 font-semibold">#</th>
                       <th className="py-3 px-4 font-semibold">DETAIL</th>
@@ -215,7 +219,7 @@ export default function DashboardPage() {
                   </thead>
                   <tbody>
                     <tr>
-                      <td colSpan={10} className="py-4 text-center text-gray-500 border-b">No Data Found</td>
+                      <td colSpan={10} className="border-b py-4 text-center text-muted-foreground">No Data Found</td>
                     </tr>
                   </tbody>
                 </table>
@@ -223,35 +227,33 @@ export default function DashboardPage() {
             </div>
           )}
         </div>
-      </section>
+      </Panel>
 
       {/* Executive Lead Analysis */}
-      <section className="bg-white rounded-md shadow-sm p-4">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 md:gap-0">
-          <h2 className="text-lg font-semibold text-gray-700">Executive Lead Analysis</h2>
+      <Panel>
+        <PanelHeader className="flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
+          <h2 className="text-base font-semibold text-foreground">Executive Lead Analysis</h2>
           <div className="flex flex-wrap gap-2">
-            <select className="border border-gray-300 rounded text-sm px-3 py-1.5 text-gray-500 bg-white min-w-[150px] outline-none">
+            <select className={selectClassName}>
               <option>Select Team</option>
             </select>
-            <select className="border border-gray-300 rounded text-sm px-3 py-1.5 text-gray-500 bg-white min-w-[150px] outline-none">
+            <select className={selectClassName}>
               <option>Select Sales Agent</option>
             </select>
           </div>
-        </div>
-      </section>
-    </div>
+        </PanelHeader>
+      </Panel>
+    </PageShell>
   );
 }
 
 function MetricCard({ title, value, icon, iconBg }: { title: string, value: string, icon: React.ReactNode, iconBg: string }) {
   return (
-    <div className="flex items-center justify-between p-4 border border-gray-100 rounded shadow-sm relative overflow-hidden bg-white">
-      {/* Blue left border marker */}
-      <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#1a56db]"></div>
-      
+    <div className="relative flex items-center justify-between overflow-hidden rounded-lg border border-border bg-card p-4 shadow-sm">
+      <div className="absolute bottom-0 left-0 top-0 w-1 bg-primary"></div>
       <div className="pl-2">
-        <p className="text-sm text-gray-500 mb-1">{title}</p>
-        <p className="text-xl font-semibold text-gray-700">{value}</p>
+        <p className="mb-1 text-sm text-muted-foreground">{title}</p>
+        <p className="text-xl font-semibold text-foreground">{value}</p>
       </div>
       <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${iconBg}`}>
         {icon}
@@ -267,9 +269,9 @@ function ActivityItem({ title, value, icon, iconBg }: { title: string, value: st
         <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${iconBg}`}>
           {icon}
         </div>
-        <span className="text-sm text-gray-600">{title}</span>
+        <span className="text-sm text-muted-foreground">{title}</span>
       </div>
-      <span className="text-sm font-semibold text-gray-700">{value}</span>
+      <span className="text-sm font-semibold text-foreground">{value}</span>
     </div>
   );
 }
@@ -289,41 +291,44 @@ function TaskRow({ id, details, date, agenda, agent }: { id: string, details: st
   }, []);
 
   return (
-    <tr className="hover:bg-gray-50">
+    <tr className="hover:bg-muted/30">
       <td className="py-3 px-4">{id}</td>
-      <td className="py-3 px-4 text-gray-700">{details}</td>
+      <td className="py-3 px-4 text-foreground">{details}</td>
       <td className="py-3 px-4">
-        <span className="bg-[#1a56db] text-white text-[10px] px-2 py-1 rounded font-medium uppercase tracking-wider">Lead</span>
+        <Badge className="rounded-md border-primary/20 bg-primary/10 px-2 py-1 text-[10px] font-medium uppercase tracking-wider text-primary">
+          Lead
+        </Badge>
       </td>
-      <td className="py-3 px-4 text-gray-600 whitespace-nowrap">
+      <td className="whitespace-nowrap py-3 px-4 text-muted-foreground">
         {date.split(',')[0]},<br />{date.split(',')[1]}
       </td>
-      <td className="py-3 px-4 text-gray-600 max-w-xs truncate" title={agenda}>{agenda}</td>
-      <td className="py-3 px-4 text-gray-600">Call</td>
-      <td className="py-3 px-4 text-gray-600">{agent}</td>
+      <td className="max-w-xs truncate py-3 px-4 text-muted-foreground" title={agenda}>{agenda}</td>
+      <td className="py-3 px-4 text-muted-foreground">Call</td>
+      <td className="py-3 px-4 text-muted-foreground">{agent}</td>
       <td className="py-3 px-4">
-        <span className="bg-[#ff5b5b] text-white text-[10px] px-2 py-1 rounded font-medium flex items-center gap-1 w-max">
-          <span className="w-2 h-2 rounded-full bg-white opacity-50"></span> To Do
-        </span>
+        <Badge className="w-max gap-1 rounded-md border-red-200 bg-red-500 px-2 py-1 text-[10px] font-medium text-white">
+          <span className="h-2 w-2 rounded-full bg-white/50"></span> To Do
+        </Badge>
       </td>
       <td className="py-3 px-4">
         <div className="relative inline-block text-left" ref={actionRef}>
-          <button 
-            className="bg-[#1a56db] hover:bg-blue-700 text-white p-1.5 rounded flex items-center justify-center transition-colors shadow-sm"
+          <Button
+            size="icon"
+            className="h-8 w-8 rounded-md"
             onClick={() => setIsActionOpen(!isActionOpen)}
           >
             <ChevronDown className="w-4 h-4" />
-          </button>
+          </Button>
           {isActionOpen && (
-            <div className="absolute right-0 top-full mt-1 w-36 bg-white border border-gray-200 rounded shadow-lg py-1 z-50">
-              <button 
-                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+            <div className="absolute right-0 top-full z-50 mt-1 w-36 rounded-lg border border-border bg-card py-1 shadow-sm">
+              <button
+                className="w-full px-4 py-2 text-left text-sm text-foreground hover:bg-muted/50"
                 onClick={() => setIsActionOpen(false)}
               >
                 Mark as done
               </button>
-              <button 
-                className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
+              <button
+                className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-muted/50"
                 onClick={() => setIsActionOpen(false)}
               >
                 Delete

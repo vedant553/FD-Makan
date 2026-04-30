@@ -6,18 +6,16 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { siteVisitsApi } from "@/lib/api-client/tasks-api";
+import { tasksQueryKeys } from "@/lib/query/tasks-query";
 
 export default function SiteVisitsPage() {
   const qc = useQueryClient();
   const [form, setForm] = useState({ leadId: "", propertyId: "", scheduledAt: "", notes: "", status: "SCHEDULED" });
 
   const { data } = useQuery({
-    queryKey: ["site-visits"],
-    queryFn: async () => {
-      const res = await fetch("/api/site-visits");
-      if (!res.ok) throw new Error("Failed");
-      return res.json();
-    },
+    queryKey: tasksQueryKeys.siteVisitsList({}),
+    queryFn: () => siteVisitsApi.list({}),
   });
 
   const { data: leadsData } = useQuery({
@@ -39,16 +37,8 @@ export default function SiteVisitsPage() {
   });
 
   const create = useMutation({
-    mutationFn: async () => {
-      const res = await fetch("/api/site-visits", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
-      });
-      if (!res.ok) throw new Error("Failed");
-      return res.json();
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["site-visits"] }),
+    mutationFn: () => siteVisitsApi.create(form),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["tasks", "siteVisits"] }),
   });
 
   return (
@@ -82,7 +72,7 @@ export default function SiteVisitsPage() {
         <table className="w-full min-w-[900px] text-sm">
           <thead className="bg-muted/50 text-left"><tr><th className="px-4 py-3">Lead</th><th className="px-4 py-3">Property</th><th className="px-4 py-3">Schedule</th><th className="px-4 py-3">Status</th><th className="px-4 py-3">Assigned</th><th className="px-4 py-3">Notes</th></tr></thead>
           <tbody>
-            {(data?.siteVisits ?? []).map((visit: any) => (
+            {(data?.siteVisits ?? data?.items ?? []).map((visit: any) => (
               <tr key={visit.id} className="border-t"><td className="px-4 py-3">{visit.lead?.name}</td><td className="px-4 py-3">{visit.property?.name}</td><td className="px-4 py-3">{new Date(visit.scheduledAt).toLocaleString()}</td><td className="px-4 py-3">{visit.status}</td><td className="px-4 py-3">{visit.assignedTo?.name || "-"}</td><td className="px-4 py-3">{visit.notes || "-"}</td></tr>
             ))}
           </tbody>

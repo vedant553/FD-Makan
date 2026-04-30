@@ -1,41 +1,48 @@
 import { NextRequest } from "next/server";
 
-import { badRequest, ok, serverError } from "@/lib/api-response";
-import { getAuthContext } from "@/lib/services/auth-context";
-import { createTask, listTasks } from "@/lib/services/task.service";
-import { createTaskSchema, taskFilterSchema } from "@/lib/validators/task";
+import { getTasksAuthContext } from "@/server/modules/tasks/tasks.auth";
+import {
+  parseDomainBody,
+  parseDomainQuery,
+  tasksErrorResponse,
+  tasksOk,
+} from "@/server/modules/tasks/tasks.domain";
+import { createTask, listTasks } from "@/server/modules/tasks/tasks.service";
+import { createTaskSchema, taskFilterSchema } from "@/server/modules/tasks/tasks.validators";
 
 export async function GET(req: NextRequest) {
   try {
-    const ctx = await getAuthContext();
-
-    const parsed = taskFilterSchema.safeParse({
+    const ctx = await getTasksAuthContext();
+    const filters = parseDomainQuery(taskFilterSchema, {
+      page: req.nextUrl.searchParams.get("page") ?? undefined,
+      limit: req.nextUrl.searchParams.get("limit") ?? undefined,
       view: req.nextUrl.searchParams.get("view") ?? undefined,
+      status: req.nextUrl.searchParams.get("status") ?? undefined,
       priority: req.nextUrl.searchParams.get("priority") ?? undefined,
+      type: req.nextUrl.searchParams.get("type") ?? undefined,
+      activityType: req.nextUrl.searchParams.get("activityType") ?? undefined,
       assignedToId: req.nextUrl.searchParams.get("assignedToId") ?? undefined,
       search: req.nextUrl.searchParams.get("search") ?? undefined,
-      date: req.nextUrl.searchParams.get("date") ?? undefined,
+      dateFrom: req.nextUrl.searchParams.get("dateFrom") ?? undefined,
+      dateTo: req.nextUrl.searchParams.get("dateTo") ?? undefined,
+      sortBy: req.nextUrl.searchParams.get("sortBy") ?? undefined,
+      sortOrder: req.nextUrl.searchParams.get("sortOrder") ?? undefined,
     });
-
-    if (!parsed.success) return badRequest(parsed.error.issues.map((i) => i.message).join(", "));
-
-    const tasks = await listTasks(ctx, parsed.data);
-    return ok({ tasks });
+    const result = await listTasks(ctx, filters);
+    return tasksOk({ tasks: result.items, pagination: result.pagination });
   } catch (error) {
-    return serverError(error);
+    return tasksErrorResponse(error);
   }
 }
 
 export async function POST(req: NextRequest) {
   try {
-    const ctx = await getAuthContext();
-    const parsed = createTaskSchema.safeParse(await req.json());
-    if (!parsed.success) return badRequest(parsed.error.issues.map((i) => i.message).join(", "));
-
-    const task = await createTask(ctx, parsed.data);
-    return ok({ task }, { status: 201 });
+    const ctx = await getTasksAuthContext();
+    const payload = await parseDomainBody(createTaskSchema, req);
+    const task = await createTask(ctx, payload);
+    return tasksOk({ task }, { status: 201 });
   } catch (error) {
-    return serverError(error);
+    return tasksErrorResponse(error);
   }
 }
 
