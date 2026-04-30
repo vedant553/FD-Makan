@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowLeftRight,
   ArrowUpDown,
@@ -551,6 +551,15 @@ export default function CrmLeadsPage() {
   const [leadStageAnalysisVisible, setLeadStageAnalysisVisible] = useState(true);
   const queryClient = useQueryClient();
   const leadsQuery = useLeads({ page, pageSize });
+  const leadsAnalyticsQuery = useQuery({
+    queryKey: ["leads", "analytics"],
+    queryFn: async () => {
+      const res = await fetch("/api/leads/analytics", { cache: "no-store" });
+      if (!res.ok) throw new Error("Failed to fetch lead analytics");
+      const payload = await res.json();
+      return payload?.data ? payload.data : payload;
+    },
+  });
   const usersQuery = useUsers();
   const addMenuRef = useRef<HTMLDivElement>(null);
   const leadMoreRef = useRef<HTMLDivElement>(null);
@@ -614,6 +623,19 @@ export default function CrmLeadsPage() {
   }));
 
   const visibleLeadRows = dbLeads;
+  const analytics = leadsAnalyticsQuery.data as
+    | {
+        total: number;
+        stageCounts: Record<string, number>;
+        summary: {
+          untouched: number;
+          noFollowups: number;
+          returning: number;
+          returningNoFollowup: number;
+          overdueTasks: number;
+        };
+      }
+    | undefined;
   const pagination = leadsQuery.data?.pagination as
     | { page: number; pageSize?: number; limit?: number; total: number; totalPages: number }
     | undefined;
@@ -621,9 +643,9 @@ export default function CrmLeadsPage() {
   const totalPages = pagination?.totalPages ?? 1;
 
   const stageRing = useMemo(() => {
-    const total = dbLeads.length || 1;
+    const total = analytics?.total || 1;
     return STAGE_RING_TEMPLATE.map((stage) => {
-      const value = dbLeads.filter((lead) => lead.stage.toUpperCase() === stage.key).length;
+      const value = analytics?.stageCounts?.[stage.key] ?? 0;
       return {
         ...stage,
         value,
@@ -631,37 +653,37 @@ export default function CrmLeadsPage() {
         ringPct: Math.max(1, Math.round((value / total) * 100)),
       };
     });
-  }, [dbLeads]);
+  }, [analytics]);
 
   const summaryCards = useMemo(
     () => [
       {
         title: "Untouched Leads",
-        value: dbLeads.filter((lead) => lead.stage.toUpperCase() === "NEW LEAD").length,
+        value: analytics?.summary?.untouched ?? 0,
         note: "Leads claimed but not contacted",
       },
       {
         title: "No Followps Leads",
-        value: dbLeads.filter((lead) => !lead.lastActivity || lead.lastActivity === "-").length,
+        value: analytics?.summary?.noFollowups ?? 0,
         note: "Contacted but no future followups",
       },
       {
         title: "Returning Leads",
-        value: dbLeads.filter((lead) => (lead.returningCount ?? 0) > 0).length,
+        value: analytics?.summary?.returning ?? 0,
         note: "Leads returning again",
       },
       {
         title: "Returning No FollowUp Leads",
-        value: dbLeads.filter((lead) => (lead.returningCount ?? 0) > 0 && (!lead.lastActivity || lead.lastActivity === "-")).length,
+        value: analytics?.summary?.returningNoFollowup ?? 0,
         note: "Returned leads but no future followups",
       },
       {
         title: "Over Due Task Leads",
-        value: dbLeads.filter((lead) => lead.status.some((s) => s.toLowerCase().includes("delay"))).length,
+        value: analytics?.summary?.overdueTasks ?? 0,
         note: "Leads with overdue followups",
       },
     ],
-    [dbLeads],
+    [analytics],
   );
 
   useEffect(() => {
@@ -718,7 +740,7 @@ export default function CrmLeadsPage() {
 
             <div className="p-4">
               <div className="flex flex-col gap-6 xl:flex-row xl:items-start">
-                <Donut total={dbLeads.length} segments={stageRing} />
+                <Donut total={analytics?.total ?? 0} segments={stageRing} />
                 <div className="grid flex-1 grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7">
                   {stageRing.map((s) => (
                     <div key={s.label} className="border-l-2 pl-2" style={{ borderColor: s.color }}>
